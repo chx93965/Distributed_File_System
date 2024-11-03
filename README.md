@@ -20,15 +20,18 @@ The project aims to develop a distributed file storage system that provides reli
 ### Security  
 - Distributing data across multiple nodes effectively reduces the risk of data breaches as the probability of simultaneous attacks on multiple nodes is usually much lower.  
 - More advanced implementations can secure each node through independently implemented encryption and access control which further protect data from both internal and external threats and ultimately enhance overall system reliability.  
- 
+
+
 In addition to these intrinsic features, a distributed file storage system also conforms with modern technology trends.
 ### Big Data and Machine Learning  
 - With the explosion of data, distributed storage architectures are well-suited to the demands of analyzing large volumes of information. As popular data analysis algorithms perform better with sufficiently large datasets, traditional centralized storage lacks flexibility without appropriate data partitioning and processing. In contrast, the architecture of decentralized storage is in accordance with big data analysis techniques, providing a good source for future research.  
 - Besides, machine learning can be employed to enhance the system’s fault tolerance and data recovery by analyzing file patterns and contents to restore lost or corrupted data. This capability makes the system even more resilient especially in scientific research. Additionally, abnormal patterns or data inconsistencies can be identified to improve the security and reliability of the system.  
   
 ### Importance in Rust  
-Popular open-source distributed file storage systems like Hadoop Distributed File System (HDFS) or Google File System are often implemented using Java or Golang. However, Rust offers better performance without the need for in-memory garbage collection and is known for its reliability, efficiency, and memory safety, under heavy loads and in complex environments. Despite Rust’s remarkable growth in systems programming, it currently lacks a production-grade distributed file system that can handle modern data processing demands. Also, Rust's ownership model and thread safety guarantees are particularly valuable for managing the complex concurrent operations inherent in distributed file systems, potentially eliminating entire classes of bugs that traditionally plague such systems. Furthermore, Rust's growing ecosystem of async runtime support makes it well-suited for handling the numerous network operations and concurrent tasks essential to GFS's architecture.  
-  
+- Popular open-source distributed file storage systems like Hadoop Distributed File System (HDFS) or Google File System (GFS) are often implemented using Java or Golang. However, Rust offers better performance without the need for in-memory garbage collection and is known for its reliability, efficiency, and memory safety, under heavy loads and in complex environments. Rust's ownership model and thread safety guarantees are also particularly valuable for managing the complex concurrent operations inherent in distributed file systems, potentially eliminating entire classes of bugs that traditionally plague such systems. Furthermore, Rust's growing ecosystem of async runtime support makes it well-suited for handling the numerous network operations and concurrent tasks essential to GFS's architecture. 
+- Despite Rust’s remarkable growth in systems programming, it currently lacks a production-grade distributed file system that can handle modern data processing demands.
+
+
 While a distributed file storage system offers significant benefits, it also requires careful management of data consistency and increased development complexity. Despite these challenges, distributed file storage systems are still optimal for specific types of applications.  
 
 ## Objective
@@ -126,21 +129,18 @@ Managing concurrent access while maintaining data consistency is a critical chal
 |      |        | System Monitor (Stretch Goal)                                         |  
 |      |        | GUI Design (Stretch Goal)                                             |  
 ### Week 1:   
-**Tasks:**  
-- **Establish the foundational structure, set up nodes under a master-slave architecture.**  
-  - **Hooman**  
-    - Implement the master server to manage metadata and control interface for chunk servers  
-  - **Swapnil**  
-    - Implement the initial chunk server as nodes for distributed data storage  
-    - Test communication between the master and chunk servers  
-  - **Hanxiao**  
-    - Establish node configurations in terms of network settings and storage paths  
-    - Define initialization processes for system startup ensuring master and chunk servers are synchronized  
+- *Establish the foundational structure, set up nodes under a master-slave architecture.*
+- **Hooman**  
+  - Implement the master server to manage metadata and control interface for chunk servers  
+- **Swapnil**  
+  - Implement the initial chunk server as nodes for distributed data storage  
+  - Test communication between the master and chunk servers  
+- **Hanxiao**  
+  - Establish node configurations in terms of network settings and storage paths  
+  - Define initialization processes for system startup ensuring master and chunk servers are synchronized  
   
 ### Week 2:   
-**Implement a scalable data partitioning and replication system with efficient chunking, metadata management, and fault-tolerant replication strategies**  
-  
-**Tasks:**  
+- *Implement a scalable data partitioning and replication system with efficient chunking, metadata management, and fault-tolerant replication strategies.*
 - **Hooman**  
   - Develop chunk and Metadata Management  
   - Implement an algorithm to efficiently divide files into chunks and distribute it to chunk servers with robust metadata management system  
@@ -152,9 +152,7 @@ Managing concurrent access while maintaining data consistency is a critical chal
   - Develop protocols for synchronizing replicas across chunk and automatically handle node failures  
   
 ### Week 3:   
-**Implement a robust concurrent access system ensuring data consistency and efficient locking mechanism.**  
-  
-**Tasks:**  
+- *Implement a robust concurrent access system ensuring data consistency and efficient locking mechanism.*
 - **Hooman**  
   - Design Consistency and locking mechanism  
   - Develop consistency model with atomic operations and locking mechanism for concurrent read/write  
@@ -166,7 +164,7 @@ Managing concurrent access while maintaining data consistency is a critical chal
   - Protocol for client coordination for shared data access and implement version control for resolving concurrent data modifications.  
   
 ### Week 4:   
-**Tasks:**  
+- *Implement fault tolerance with master failover and chunk recovery, define load-balancing procedures.*
 - **Hooman**  
   - Implement master node failover  
   - Develop chunk rebalancing logic  
@@ -187,7 +185,8 @@ Managing concurrent access while maintaining data consistency is a critical chal
   - Create fault tolerance tests  
   
 ### Week 5:   
-**Tasks:**  
+- *Implement user authentication logic and other security features, while optimizing performance and chunk operations.*
+- *Develop system monitoring module and start GUI development if time allows.*
 - **Hooman**  
   - Implement authentication system  
   - Develop access control lists  
@@ -208,9 +207,8 @@ Managing concurrent access while maintaining data consistency is a critical chal
   - Create security tests  
   
 ### Week 6:   
-**Tasks:**  
-- **Review and test the code by work done each week, and document key features as needed**  
-- **Finalize system monitoring and GUI design based on the time remaining**  
+- *Review and test the code by work done each week, and document key features as needed*
+- *Finalize system monitoring and GUI design based on the time remaining*
 - **Hooman**  
   - Conduct functional tests on node creation, and data partition  
   - Complete system monitoring of system health and resource usage (if time permits)  
