@@ -1,6 +1,7 @@
 
 
 # Distributed File System in Rust  
+![Google File System](./imgs/Google-File-System-Architecture.png "Google File System Architecture")
   
 ## Motivation  
 The project aims to develop a distributed file storage system that provides reliable, efficient, and secure services to various applications. The idea is inspired by the heavy reliance of internet industry corporations on large-scale data centers, in which high-availability systems are needed to minimize impact on real-world operations due to possible errors or failures. Though not widely applied, data-driven applications benefit from this system’s inherent advantages over traditional databases and its alignment with the evolving trend of big data and AI technologies.  
