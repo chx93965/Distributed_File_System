@@ -58,7 +58,7 @@ Our distributed file storage system is built on a robust and scalable architectu
 In today's data-critical environment, maintaining data integrity and availability is paramount. Our system implements a comprehensive approach to data reliability through multiple redundancy mechanisms. At its core, the system employs a replication strategy that ensures data survival even in the face of multiple simultaneous failures. By combining automatic triple replication with intelligent cross-rack distribution and continuous health monitoring, we provide a self-healing storage environment that maintains data integrity without requiring manual intervention.  
   
 - **Automatic Replication**: Triple replication of data chunks across different physical servers ( *** )  
-- **Intelligent Placement**: Cross-rack distribution of replicas to handle rack failures  
+- **Intelligent Placement**: Cross-rack distribution of replicas to handle rack failures ( *** )
 - **Failure Detection**: Continuous health monitoring of storage nodes ( *** )  
 - **Self-Healing**: Automatic re-replication of data when node failures or corruptions are detected ( *** )  
 - **Data Integrity**: Checksum verification for all stored chunks ( *** )  
@@ -67,40 +67,40 @@ In today's data-critical environment, maintaining data integrity and availabilit
   
 Our high-performance architecture is engineered to maximize throughput while minimizing latency in large-scale storage operations. Through careful optimization of chunk sizes, intelligent data transfer mechanisms, and efficient caching strategies, the system delivers exceptional performance even under heavy load. The design emphasizes reducing network overhead and maximizing data locality, resulting in a storage system that can handle massive data volumes while maintaining responsive access times for all operations.  
   
-- **Optimized Chunk Size**: 64MB chunk size to minimize metadata overhead  
+- **Optimized Chunk Size**: 64MB chunk size to minimize metadata overhead ( * ) 
   - Could have other sizes as well for medium - small files  
-- **Efficient Data Transfer**:  
+- **Efficient Data Transfer**: ( *** )
   - Pipelined data transfers between nodes  
   - Direct client-to-chunkserver data transfer  
-- **Caching Strategy**: In-memory caching of metadata in master server  
-- **Batch Operations**: Support for batch processing of file operations  
+- **Caching Strategy**: In-memory caching of metadata in master server ( *** )
+- **Batch Operations**: Support for batch processing of file operations ( ** ) 
   
 ### Consistency and Concurrency  
   
 Managing concurrent access while maintaining data consistency is a critical challenge in distributed systems. Our solution implements a sophisticated consistency model that guarantees atomic operations while supporting high levels of concurrent access. Through an innovative lease-based management system and optimized append operations, we ensure that multiple clients can simultaneously access and modify data without compromising consistency. This approach provides strong consistency guarantees while maintaining the high-performance characteristics essential for modern distributed applications.  
   
-- **Atomic Operations**: Guaranteed atomicity for metadata operations  
-- **Lease Management**: Chunk lease mechanism to ensure consistent mutations  
+- **Atomic Operations**: Guaranteed atomicity for metadata operations ( *** )
+- **Lease Management**: Chunk lease mechanism to ensure consistent mutations ( *** ) 
 - **Concurrent Access**: Support for multiple clients accessing the system simultaneously ( *** )  
-- **Append Optimization**: Efficient handling of concurrent append operations  
-- **Version Control**: Basic file versioning support for conflict resolution  
+- **Append Optimization**: Efficient handling of concurrent append operations ( * ) 
+- **Version Control**: Basic file versioning support for conflict resolution ( ** )
   
 ### Security and Access Control  
   
 - **Authentication**: Client authentication using secure protocols ( *** )  
-- **Authorization**: Role-based access control for files and directories  
-- **Encryption**: Data encryption during transfer and at rest  
-- **Audit Logging**: Comprehensive logging of all system operations  
+- **Authorization**: Role-based access control for files and directories ( * )
+- **Encryption**: Data encryption during transfer and at rest ( * )
+- **Audit Logging**: Comprehensive logging of all system operations ( * )
   
 ### Monitoring and Management (Stretch Goal)  
   
-- **System Dashboard**: Web-based interface for system monitoring  
-- **Performance Metrics**:  
+- **System Dashboard**: Web-based interface for system monitoring ( * )
+- **Performance Metrics**: ( * )
   - Real-time storage capacity monitoring  
   - Network bandwidth utilization  
   - System latency measurements  
   - Node health status  
-- **Alert System**: Automated notifications for:  
+- **Alert System**: Automated notifications for: ( * )
   - Storage capacity thresholds  
   - Node failures  
   - Performance degradation  
@@ -108,26 +108,24 @@ Managing concurrent access while maintaining data consistency is a critical chal
   
 ### Additional Features (Stretch Goal)  
   
-- **Garbage Collection**: Automatic cleanup of deleted and orphaned chunks  
-- **Snapshot Support**: Point-in-time snapshots for backup purposes  
-- **Data Migration**: Tools for data import/export and migration  
-- **Quota Management**: Storage quota enforcement at directory/user level  
-- **Maintenance Mode**: Support for graceful system maintenance  
+- **Garbage Collection**: Automatic cleanup of deleted and orphaned chunks ( * )
+- **Snapshot Support**: Point-in-time snapshots for backup purposes ( * ) 
+- **Data Migration**: Tools for data import/export and migration ( * ) 
+- **Quota Management**: Storage quota enforcement at directory/user level ( * ) 
+- **Maintenance Mode**: Support for graceful system maintenance ( * ) 
 
 ## Tentative Plan
 | Week | Date   | Tasks                                                                 |  
 |------|--------|-----------------------------------------------------------------------|  
-| 1    | Nov. 4 | Node Implementation and Master-slave Architecture                     |  
+| 1    | Nov. 4 | Node Implementation and Master-Slave Architecture                     |  
 | 2    | Nov. 11| Data Partitioning and Replication                                     |  
 | 3    | Nov. 18| Concurrent Access                                                     |  
 | 4    | Nov. 25| Fault Tolerance and Load Balancing                                    |  
 | 5    | Dec. 2 | User Authentication                                                   |  
-|      |        | System Monitor (Stretch Goal)                                         |  
-|      |        | GUI Design (Stretch Goal)                                             |  
+|      |        | System Monitor and GUI Design (Stretch Goal)                          |  
 | 6    | Dec. 9 | Functional and Stress Testing                                         |  
 |      |        | Code Review and Documentation                                         |  
-|      |        | System Monitor (Stretch Goal)                                         |  
-|      |        | GUI Design (Stretch Goal)                                             |  
+|      |        | System Monitor and GUI Design (Stretch Goal)                          |  
 ### Week 1:   
 - *Establish the foundational structure, set up nodes under a master-slave architecture.*
 - **Hooman**  
@@ -176,13 +174,11 @@ Managing concurrent access while maintaining data consistency is a critical chal
   - Develop corrupt chunk handling  
   - Create chunk migration system  
   - Implement rack awareness  
-  - Develop failure recovery tests  
 - **Hanxiao**  
   - Implement client-side failure handling  
   - Create automatic failover in client  
   - Develop connection pooling  
   - Implement load-aware client  
-  - Create fault tolerance tests  
   
 ### Week 5:   
 - *Implement user authentication logic and other security features, while optimizing performance and chunk operations.*
@@ -204,7 +200,6 @@ Managing concurrent access while maintaining data consistency is a critical chal
   - Create secure client sessions  
   - Start GUI development (if time permits)  
   - Develop user management interface  
-  - Create security tests  
   
 ### Week 6:   
 - *Review and test the code by work done each week, and document key features as needed*
