@@ -1,16 +1,12 @@
-use std::{io::Write, net::SocketAddr};
-
-use axum::{
-    routing::{get},
-    Router,
-};
-
-use log::{debug, error, info};
 use env_logger::{Builder, Env};
+use log::{debug, error, info};
+use rocket::{get, routes, tokio::net::TcpListener, Build, Rocket};
+use std::io::Write;
 
-#[tokio::main]
-async fn main() {
-    Builder::from_env(Env::default().default_filter_or("trace")) // Set to a wide range initially
+#[macro_use] extern crate rocket;
+
+fn set_logging() {
+    Builder::from_env(Env::default().default_filter_or("trace"))
         .format(|buf, record| {
             // Set the logging filter level:
             // 5 LevelFilter::Trace - Very detailed, often used for debugging fine details.
@@ -32,18 +28,17 @@ async fn main() {
             }
         })
         .init();
-
-    let app: Router = Router::new().route("/", get(hello));
-
-    let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
-    let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
-
-    info!("Listening on {}", addr);
-    debug!("This is a debug message");
-    error!("This is an error message");
-    axum::serve(listener, app).await.unwrap();
 }
 
+#[launch]
+fn rocket() -> _ {
+    set_logging();
+
+    rocket::build()
+        .mount("/", routes![hello])
+}
+
+#[get("/")]
 async fn hello() -> &'static str {
     "Hello, world! from Chunk Server\n"
 }
