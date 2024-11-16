@@ -60,7 +60,7 @@ fn main() {
 *       1. Lookup File Directory 
 *       2. Acquire Directory Lock
 *       3. Check Permissions
-*       4. Create File 
+*       4. Create File Entry
 *       5. Release Directory Lock
 */
 fn file_create(){
@@ -72,7 +72,7 @@ fn file_create(){
 *       1. Lookup File Directory 
 *       2. Acquire Directory Lock
 *       3. Check Permissions
-*       4. Delete File 
+*       4. Delete File Entry
 *       5. Release Directory Lock
 */
 fn file_delete(){
@@ -127,14 +127,19 @@ fn directory_delete(){
 }
 
 
+fn update_namespace(){
+
+}
+
 
 /*
-*   Heartbeat received from chunkservers
+*   Heartbeat received from chunkservers.
+*   Called by chunkservers with : Chunkserver ID + Chunks + Chunk Info
 *   Input : 
 *   Output : Chunk Location - Send Data to Chunk
 */
 fn heartbeat(){
-    //TODO
+    
 }
 
 
