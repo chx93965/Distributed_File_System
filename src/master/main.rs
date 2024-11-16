@@ -56,85 +56,80 @@ fn main() {
 }
 
 /*
-*   A managers for all the files and directories
-*   in the file system
-*
-*
-*   Data Structures : 
-*       1.  Directory Node {
-*                Directory Name         : String;
-*                Directory Parent       : Directory Node;
-*                Directory Metadata     : Metadata 
-*                Read Write Lock        : RW Lock                
-*
-*                Children = {
-*                    Files          : Map ("File Name" -> File Node)
-*                    Directories    : Map ("Dir Name" -> Dir Node)
-*                }
-*                
-*
-*            } 
-*
-*       2.  File Node {
-*               File Name           : String
-*               File Parent         : Directory Node 
-*               Chunks              : List<Chunk Handle>
-*               File Metadata       : Metadata
-*               Read Write Lock     : RW Lock                       
-*           }
-*
-*       
-*
-*       3.  Directory Map (Path -> Directory Node)
-*
-*
-*       4.  Metadata {
-*               Size            : i64
-*               Creation Time   : DateTime
-*               Modify Time     : DateTime
-*               Permissions     : Permission
-*               Owner           : String
-*               Group           : String
-*           }
-*
-*
-*
-*
-*
-*   Functions : 
-*
-*       1. Lookup Path
-*       2. Create File
-*       3. Delete File
-*       4. List Directory 
-*       5. Rename
-*
-*
-*
-*   
+*   All done by namespace manager : 
+*       1. Lookup File Directory 
+*       2. Acquire Directory Lock
+*       3. Check Permissions
+*       4. Create File 
+*       5. Release Directory Lock
 */
-fn namespace_manager(){
-
-}
-
-
-fn path_lookup(){
-
-}
-
 fn file_create(){
 
 }
 
+/*
+*   All done by namespace manager : 
+*       1. Lookup File Directory 
+*       2. Acquire Directory Lock
+*       3. Check Permissions
+*       4. Delete File 
+*       5. Release Directory Lock
+*/
 fn file_delete(){
-
-}
-
-fn list_directory(){
     
 }
+
 /*
-*   Heartbeat message sent to chunkservers
+*   All done by namespace manager : 
+*       1. Lookup File Directory 
+*       2. Acquire Directory Lock
+*       3. Check Permissions
+*       4. Release Directory Lock
+*/
+fn file_read(){
+
+}
+
+/*
+*   All done by namespace manager : 
+*       1. Lookup File Directory 
+*       2. Acquire Directory Lock
+*       3. Check Permissions
+*       4. Release Directory Lock
+*/
+fn file_write(){
+
+}
+
+
+/*
+*   All done by namespace manager : 
+*       1. Lookup Parent Directory 
+*       2. Acquire Parent Lock
+*       3. Check Permissions
+*       4. Create Directory
+*       5. Release Parent Lock
+*/
+fn direcotry_create(){
+
+}
+
+/*
+*   All done by namespace manager : 
+*       1. Lookup Parent Directory 
+*       2. Acquire Parent Lock
+*       3. Check Permissions
+*       4. Delete Directory
+*       5. Release Parent Lock
+*/
+fn directory_delete(){
+    
+}
+
+
+
+/*
+*   Heartbeat received from chunkservers
 *   Input : 
 *   Output : Chunk Location - Send Data to Chunk
 */
