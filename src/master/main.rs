@@ -2,6 +2,8 @@
 *   The following is based on prof. Ashvin Goels Slides on GFS
 */
 
+mod namespace_manager;
+
 
 /*  
 *   Maintains filesystem's metadata in memory :
@@ -52,7 +54,8 @@ fn main() {
     *   Get chunkserver state from chunkservers
     *   Ret Instruction to chunkservers
     */
-
+    namespace_manager::namespace_manager_init();
+    file_read("aaa".to_string(), 2);
 }
 
 /*
@@ -86,8 +89,8 @@ fn file_delete(){
 *       3. Check Permissions
 *       4. Release Directory Lock
 */
-fn file_read(){
-
+fn file_read(file_name:String, chunk_index:i32){
+    namespace_manager::path_lookup(file_name, chunk_index);
 }
 
 /*
@@ -141,5 +144,3 @@ fn update_namespace(){
 fn heartbeat(){
     
 }
-
-

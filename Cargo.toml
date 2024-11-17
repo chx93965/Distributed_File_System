@@ -3,4 +3,9 @@ name = "project"
 version = "0.1.0"
 edition = "2021"
 
+[[bin]]
+name = "master"
+path = "src/master/main.rs"
+
 [dependencies]
+chrono = { version = "0.4", features = ["serde"] }
