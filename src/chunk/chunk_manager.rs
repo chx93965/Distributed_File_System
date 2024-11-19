@@ -1,7 +1,6 @@
 use std::path::Path;
 use uuid::Uuid;
 
-
 struct Chunk {
     data: Vec<u8>,
     size: usize,
@@ -71,7 +70,11 @@ impl ChunkManager {
             let chunk_file = chunk_file.unwrap();
             let chunk_path = chunk_file.path();
             let chunk_data = std::fs::read(&chunk_path).unwrap();
-            let chunk_id_str = chunk_path.file_name().unwrap().to_string_lossy().to_string();
+            let chunk_id_str = chunk_path
+                .file_name()
+                .unwrap()
+                .to_string_lossy()
+                .to_string();
 
             if let Ok(chunk_id) = Uuid::parse_str(&chunk_id_str) {
                 let chunk = Chunk {
@@ -83,7 +86,10 @@ impl ChunkManager {
                 self.chunks.chunk_count += 1;
             }
         }
-        info!("ChunkManager initialized with {} chunks", self.chunks.chunk_count);
+        info!(
+            "ChunkManager initialized with {} chunks",
+            self.chunks.chunk_count
+        );
     }
 
     pub fn add_chunk(&mut self, data: Vec<u8>, id: Uuid) {
@@ -97,43 +103,46 @@ mod tests {
 
     const TEST_CHUNKS_DIR: &str = "/tmp/chunks";
 
+    fn pre_test(dir: &str) {
+        // if directory exists, clear it
+        if Path::new(dir).exists() {
+            std::fs::remove_dir_all(dir).unwrap();
+        }
+    }
+
     #[test]
     fn test_add_chunk() {
-        let mut chunk_manager = ChunkManager::new(1024, TEST_CHUNKS_DIR.to_string());
+        // dir be TEST_CHUNKS_DIR/test_add_chunk
+        let dir = format!("{}/test_add_chunk", TEST_CHUNKS_DIR);
+        pre_test(&dir);
+
+        let mut chunk_manager = ChunkManager::new(1024, dir.to_string());
         let data = vec![0; 1024];
         let id = Uuid::new_v4();
         chunk_manager.add_chunk(data, id);
-
         assert_eq!(chunk_manager.chunks.chunk_count, 1);
-
-        // Clean up
-        std::fs::remove_dir_all(TEST_CHUNKS_DIR).unwrap();
     }
 
     #[test]
     fn test_init() {
-        let mut chunk_manager = ChunkManager::new(1024, TEST_CHUNKS_DIR.to_string());
-        let data = vec![0; 1024];
-        let id = Uuid::new_v4();
-        chunk_manager.add_chunk(data, id);
+        let dir = format!("{}/test_init", TEST_CHUNKS_DIR);
+        pre_test(&dir);
 
-        let mut chunk_manager = ChunkManager::new(1024, TEST_CHUNKS_DIR.to_string());
-        assert_eq!(chunk_manager.chunks.chunk_count, 1);
+        let chunk_manager = ChunkManager::new(1024, dir.to_string());
 
-        // Clean up
-        std::fs::remove_dir_all(TEST_CHUNKS_DIR).unwrap();
+        assert_eq!(chunk_manager.chunks.chunk_count, 0);
     }
 
     #[test]
     fn test_init_with_existing_chunk() {
-         let mut chunk_manager = ChunkManager::new(1024, TEST_CHUNKS_DIR.to_string());
+        let dir = format!("{}/test_init_with_existing_chunk", TEST_CHUNKS_DIR);
+        pre_test(&dir);
+
+        let mut chunk_manager = ChunkManager::new(1024, dir.to_string());
         chunk_manager.add_chunk(vec![0; 1024], Uuid::new_v4());
         chunk_manager.add_chunk(vec![0; 1024], Uuid::new_v4());
 
-        let mut chunk_manager = ChunkManager::new(1024, TEST_CHUNKS_DIR.to_string());
+        let mut chunk_manager = ChunkManager::new(1024, dir.to_string());
         assert_eq!(chunk_manager.chunks.chunk_count, 2);
-        
-        // Clean up
-        std::fs::remove_dir_all(TEST_CHUNKS_DIR).unwrap();
     }
 }
