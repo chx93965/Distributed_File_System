@@ -3,6 +3,7 @@ use rocket::{
     get,
     http::Status,
     response::status,
+    serde::json::Json,
     tokio::{self, io::AsyncReadExt, sync::Mutex},
     State,
 };
@@ -46,7 +47,8 @@ async fn main() {
         .mount("/", routes![hello])
         .mount("/", routes![add_chunk])
         .mount("/", routes![get_chunk])
-        .mount("/", routes![append_chunk]);
+        .mount("/", routes![append_chunk])
+        .mount("/", routes![get_chunk_list]);
 
     // Start the Rocket server
     app.launch().await.unwrap();
@@ -211,6 +213,14 @@ async fn get_chunk(
     // Log the retrieval and respond with the chunk data
     log::info!("Chunk retrieved with ID: {}", id);
     Ok(chunk)
+}
+
+#[get("/get_chunk_list")]
+async fn get_chunk_list(state: &State<SharedChunkManager>) -> Json<Vec<String>> {
+    let chunk_manager = state.lock().await;
+    let chunk_list = chunk_manager.get_chunk_list();
+    let string_list: Vec<String> = chunk_list.iter().map(|id| id.to_string()).collect();
+    Json(string_list)
 }
 
 #[catch(400)]

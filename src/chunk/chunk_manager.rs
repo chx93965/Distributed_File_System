@@ -136,6 +136,10 @@ impl ChunkManager {
     pub fn append_chunk(&mut self, data: Vec<u8>, id: Uuid) {
         self.chunks.append_chunk(data, id);
     }
+
+    pub fn get_chunk_list(&self) -> Vec<Uuid> {
+        self.chunks.chunks.iter().map(|chunk| chunk.id).collect()
+    }
 }
 
 #[cfg(test)]
