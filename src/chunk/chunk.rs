@@ -45,7 +45,8 @@ async fn main() {
         .register("/", catchers![bad_request, not_found, payload_too_large])
         .mount("/", routes![hello])
         .mount("/", routes![add_chunk])
-        .mount("/", routes![get_chunk]);
+        .mount("/", routes![get_chunk])
+        .mount("/", routes![append_chunk]);
 
     // Start the Rocket server
     app.launch().await.unwrap();
@@ -116,6 +117,41 @@ async fn add_chunk(
     // Log the addition and respond with success
     log::info!("Chunk added with ID: {}", id);
     Ok(status::Created::new("/").body("Chunk added\n"))
+}
+
+#[post("/append_chunk?<id>", data = "<data>")]
+async fn append_chunk(
+    state: &State<SharedChunkManager>,
+    id: String, // UUID as a query parameter
+    data: Data<'_>,
+) -> Result<status::Created<&'static str>, Status> {
+    let mut chunk_manager = state.lock().await;
+
+    // Parse the UUID from the query parameter
+    let id = match Uuid::parse_str(&id) {
+        Ok(uuid) => uuid,
+        Err(_) => {
+            error!("Invalid UUID provided");
+            return Err(Status::BadRequest);
+        }
+    };
+
+    // Read binary data from the HTTP body
+    let mut buffer = Vec::new();
+    let limit = ByteUnit::Byte(CHUNK_SIZE_MAX as u64);
+    let mut stream = data.open(limit);
+
+    if let Err(e) = stream.read_to_end(&mut buffer).await {
+        error!("Failed to read data from request: {}", e);
+        return Err(Status::PayloadTooLarge);
+    }
+
+    // Append the chunk to the ChunkManager
+    chunk_manager.append_chunk(buffer, id);
+
+    // Log the addition and respond with success
+    log::info!("Chunk appended with ID: {}", id);
+    Ok(status::Created::new("/").body("Chunk appended\n"))
 }
 
 ///
