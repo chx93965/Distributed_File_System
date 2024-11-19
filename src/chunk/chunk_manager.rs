@@ -3,13 +3,13 @@ use uuid::Uuid;
 
 struct Chunk {
     data: Vec<u8>,
-    size: usize,
+    _size: usize,
     id: uuid::Uuid,
 }
 
 struct Chunks {
     chunks: Vec<Chunk>,
-    chunk_size: usize,
+    _chunk_size: usize,
     chunk_count: usize,
     chunks_dir: String,
 }
@@ -18,7 +18,7 @@ impl Chunks {
     pub fn new(chunk_size: usize, chunks_dir: String) -> Self {
         Chunks {
             chunks: Vec::new(),
-            chunk_size: chunk_size,
+            _chunk_size: chunk_size,
             chunk_count: 0,
             chunks_dir: chunks_dir,
         }
@@ -27,7 +27,7 @@ impl Chunks {
         let size = data.len();
         let chunk = Chunk {
             data,
-            size: size,
+            _size: size,
             id: id,
         };
 
@@ -39,6 +39,10 @@ impl Chunks {
 
         self.chunks.push(chunk);
         self.chunk_count += 1;
+    }
+
+    pub fn find_chunk(&self, id: Uuid) -> Option<&Chunk> {
+        self.chunks.iter().find(|chunk| chunk.id == id)
     }
 }
 
@@ -70,6 +74,7 @@ impl ChunkManager {
             let chunk_file = chunk_file.unwrap();
             let chunk_path = chunk_file.path();
             let chunk_data = std::fs::read(&chunk_path).unwrap();
+            let chunk_data_size = chunk_data.len();
             let chunk_id_str = chunk_path
                 .file_name()
                 .unwrap()
@@ -79,7 +84,7 @@ impl ChunkManager {
             if let Ok(chunk_id) = Uuid::parse_str(&chunk_id_str) {
                 let chunk = Chunk {
                     data: chunk_data,
-                    size: 1024,
+                    _size: chunk_data_size,
                     id: chunk_id,
                 };
                 self.chunks.chunks.push(chunk);
@@ -94,6 +99,14 @@ impl ChunkManager {
 
     pub fn add_chunk(&mut self, data: Vec<u8>, id: Uuid) {
         self.chunks.add_chunk(data, id);
+    }
+
+    pub fn get_chunk(&self, id: Uuid) -> Result<Vec<u8>, String> {
+        let chunk = self.chunks.find_chunk(id);
+        match chunk {
+            Some(chunk) => Ok(chunk.data.clone()),
+            None => Err("Chunk not found".to_string()),
+        }
     }
 }
 
