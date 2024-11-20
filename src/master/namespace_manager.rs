@@ -63,6 +63,7 @@ use std::sync::RwLock;
 *
 */
 
+#[derive(Debug)]
 struct Metadata {
     size: i32,
     creation_time: DateTime<Utc>,
@@ -72,44 +73,72 @@ struct Metadata {
     group: String,
 }
 
-struct FileNode {
-    file_name: String,
-    file_parent: DirectoryNode,
-    file_metadata: Metadata,
-    rw_lock: RwLock<i32>,
-}
-
-impl FileNode {
-    pub fn new(file_name : String, file_parent : DirectoryNode, file_metadata : Metadata) -> Self {
+impl Metadata {
+    pub fn new(
+        size: i32,
+        permission: i32,
+        owner: String,
+        group: String,
+    ) -> Self {
+        let utc_now: DateTime<Utc> = Utc::now();
         Self {
-            file_name           : file_name,
-            file_parent         : file_parent,
-            file_metadata       : file_metadata,
-            rw_lock             : RwLock::new(0)
+            size : size,
+            creation_time : utc_now,
+            modification_time : utc_now,
+            permission : permission,
+            owner : owner,
+            group : group
         }
     }
 }
 
+#[derive(Debug)]
+struct FileNode {
+    file_name       : String,
+    file_parent     : String,
+    file_metadata   : Metadata,
+    rw_lock         : RwLock<i32>,
+}
+
+impl FileNode {
+    pub fn new(file_name: String, file_parent: String, file_metadata: Metadata) -> Self {
+        Self {
+            file_name: file_name,
+            file_parent: file_parent,
+            file_metadata: file_metadata,
+            rw_lock: RwLock::new(0),
+        }
+    }
+}
+
+const DIR_SIZE :i32 = 4000;
+
+#[derive(Debug)]
 struct DirectoryNode {
     dir_name: String,
-    dir_parent: Box<DirectoryNode>,
+    dir_parent: String,
     dir_metadata: Metadata,
     rw_lock: RwLock<i32>,
     children: DirectoryChildren,
 }
 
-impl DirectoryNode {
-    pub fn new(dir_name: String, dir_parent: DirectoryNode, dir_metadata: Metadata) -> Self {
-        return Self {
-            dir_name : dir_name,
-            dir_parent : Box::new(dir_parent),
-            dir_metadata : dir_metadata,
-            rw_lock : RwLock::new(0),
-            children : DirectoryChildren::new()
-        }
+impl DirectoryNode  {
+    pub fn new(dir_name: String, dir_metadata: Metadata, dir_parent : String) {
+        let node = DirectoryNode {
+            dir_name: dir_name.clone(),
+            dir_metadata: dir_metadata,
+            dir_parent : dir_parent,
+            rw_lock: RwLock::new(0),
+            children: DirectoryChildren::new(),
+        };
+        /*
+        *   Add the new node to the directory map
+        */
+        DIR_MAP.insert(dir_name.clone(), node);
     }
 }
 
+#[derive(Debug)]
 struct DirectoryChildren {
     directories: Vec<DirectoryNode>,
     files: Vec<FileNode>,
@@ -118,9 +147,9 @@ struct DirectoryChildren {
 impl DirectoryChildren {
     pub const fn new() -> Self {
         return Self {
-            directories : Vec::new(),
-            files : Vec::new()
-        }
+            directories: Vec::new(),
+            files: Vec::new(),
+        };
     }
 }
 
@@ -161,18 +190,18 @@ static DIR_MAP: SafeMap = SafeMap::new();
 
 pub fn namespace_manager_init() {
     DIR_MAP.init();
+    let mut root_metadata = Metadata::new(DIR_SIZE, 0x666, "0".to_string(), "root".to_string());
+    DirectoryNode::new("/".to_string(), root_metadata, "/".to_string());
+    /*
+    * Add some random files for test
+    */
 }
 
 /////////////////////////////////////////////////////
 /// Path Lookup
 
 pub fn path_lookup(path: String, chunk_index: i32) {
-    DIR_MAP.init();
-    DIR_MAP.insert(
-        "key4".to_string(),
-        vec!["value7".to_string(), "value8".to_string()],
-    );
-    println!("Safe map value: {:?}", DIR_MAP.get("key5"));
+   
 }
 
 ////////////////////////////////////////////////////
@@ -180,14 +209,14 @@ pub fn path_lookup(path: String, chunk_index: i32) {
 
 fn file_create(path: String) {
     /*
-    *   Call logger and wait to log operation
-    */
+     *   Call logger and wait to log operation
+     */
 }
 
 fn file_delete(path: String) {
     /*
-    *   Call logger and wait to log operation
-    */
+     *   Call logger and wait to log operation
+     */
 }
 
 ////////////////////////////////////////////////////
@@ -197,12 +226,12 @@ fn list_directory(path: String) {}
 
 fn directory_create(path: String) {
     /*
-    *   Call logger and wait to log operation
-    */
+     *   Call logger and wait to log operation
+     */
 }
 
 fn directory_delete(path: String) {
     /*
-    *   Call logger and wait to log operation
-    */
+     *   Call logger and wait to log operation
+     */
 }
