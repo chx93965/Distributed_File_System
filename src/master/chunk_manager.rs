@@ -19,6 +19,7 @@
 */
 
 use chrono::{DateTime, Utc};
+use uuid::Uuid;
 
 pub struct ChunkInfo {
     version : u16,
@@ -26,4 +27,13 @@ pub struct ChunkInfo {
     size : i64,
     last_modified : DateTime<Utc>,
     primary_server : Vec<String>
+}
+
+
+/*
+*   Function that returns the best chunks to hold the 
+*   data
+*/
+pub fn get_chunks(size:i64) -> Vec<Uuid>{
+    todo!()
 }

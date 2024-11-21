@@ -1,10 +1,10 @@
 use chrono::prelude::*;
 use chrono::DateTime;
 
-use std::sync::Arc;
-use std::collections::HashMap;
 use crate::chunk_manager;
 use crate::safe_map::SafeMap;
+use std::collections::HashMap;
+use std::sync::Arc;
 use std::sync::RwLock;
 use uuid::Uuid;
 
@@ -62,6 +62,14 @@ use uuid::Uuid;
 *
 */
 
+const NO_DIR_EXIST: &str = "No such directory exists";
+const NO_FILE_EXIST: &str = "No such file exists";
+const FILE_ALREADY_EXIST: &str = "This file already exists";
+const DIR_ALREADY_EXIST: &str = "This directory already exists";
+const CREATED_DIR_SUCCESSFULLY : &str = "Successfully created directory";
+const CREATED_FILE_SUCCESSFULLY : &str = "Successfully created file";
+const DIR_SIZE: i32 = 4000;
+const FILE_SIZE: i32 = 10000;
 #[derive(Debug)]
 struct Metadata {
     size: i32,
@@ -121,15 +129,13 @@ impl FileNode {
     }
 }
 
-const DIR_SIZE: i32 = 4000;
-
 #[derive(Debug)]
 struct DirectoryNode {
     dir_name: String,
     dir_parent: String,
     dir_metadata: Metadata,
     rw_lock: RwLock<i32>,
-    files: HashMap<String,FileNode>,
+    files: HashMap<String, FileNode>,
 }
 
 impl DirectoryNode {
@@ -164,7 +170,7 @@ pub fn namespace_manager_init() {
     let a_metadata = Metadata::new(DIR_SIZE, 0x666, "1".to_string(), "user".to_string());
     DirectoryNode::new("/a".to_string(), a_metadata, "/".to_string());
 
-    let file_metadata = Metadata::new(DIR_SIZE, 0x666, "1".to_string(), "user".to_string());
+    let file_metadata = Metadata::new(FILE_SIZE, 0x666, "1".to_string(), "user".to_string());
     FileNode::new("k".to_string(), "/a".to_string(), file_metadata);
 
     // println!("root : {:?} ----", DIR_MAP.get("/").unwrap());
@@ -178,13 +184,13 @@ pub fn file_lookup(path: String, chunk_index: i32) {
     let (directory, filename) = path.rsplit_once('/').unwrap_or(("", &path));
     println!("dir {}, file {}", directory, filename);
     if let Some(dir) = DIR_MAP.get(&directory) {
-        if let Some(file) =  dir.files.get(filename){
+        if let Some(file) = dir.files.get(filename) {
             println!("{:?}", file);
         } else {
-            println!("No such file exists in directory !!!");
+            println!("{}", NO_FILE_EXIST);
         }
     } else {
-        println!("Wrong input directory !!!");
+        println!("{}", NO_DIR_EXIST);
     }
 }
 
@@ -194,31 +200,95 @@ pub fn file_lookup(path: String, chunk_index: i32) {
 /*
 *   Example : file_create(/foo/bar.txt)
 */
-fn file_create(path: String) {
+pub fn file_create(path: String) {
     /*
-     *   Call logger and wait to log operation
+     *   TODO : Call logger and wait to log operation
+     *      .... Call logger ....
      */
-    
+
+    /*
+     *      The file is empty until a write is made to it
+     *      then we need to allocate some chunks for the
+     *      actual data. But until then only existing in the
+     *      namespace would safice :)
+     */
+    let (directory, filename) = path.rsplit_once('/').unwrap_or(("", &path));
+    if let Some(dir) = DIR_MAP.get(directory) {
+        dir.rw_lock.write();
+
+        if let Some(file) = dir.files.get(filename) {
+            println!("{}", FILE_ALREADY_EXIST);
+        } else {
+            /*
+             *      This metadata should be given by the client but until then
+             *      add a dummy metadata
+             */
+
+            /*
+             *  Should check a bunch of metadata for permissions beforhand but will skip this 
+             *  til' later
+             *  .... Check Permissions ....
+             */
+            let m = Metadata::new(FILE_SIZE, 0x666, "1".to_string(), "user".to_string());
+            FileNode::new(filename.to_string(), dir.dir_name.to_string(), m);
+            println!("{}", CREATED_FILE_SUCCESSFULLY);
+        }
+    } else {
+        println!("{}", NO_DIR_EXIST);
+    }
 }
 
-fn file_delete(path: String) {
+pub fn file_delete(path: String) {
     /*
      *   Call logger and wait to log operation
      */
 }
+
+/*
+ *      Write to a file. 
+ *      1. Allocate some chunks according to the 
+ *         chunkmanagers best fit chunkservers
+ * 
+ *      2. Update chunkservers to tell them the 
+ *         chunk handles.
+ * 
+ *      
+ */
+pub fn file_write(path: String, size: i64){
+
+}
+
+
 
 ////////////////////////////////////////////////////
 /// Directory Operations
 
-fn list_directory(path: String) {}
+pub fn list_directory(path: String) {}
 
-fn directory_create(path: String) {
+pub fn directory_create(path: String) {
     /*
      *   Call logger and wait to log operation
      */
+    if let Some(new_dir) = DIR_MAP.get(path.as_str()) {
+        println!("{}", DIR_ALREADY_EXIST);
+    } else {
+        let (parent_dir, new_dir) = path.rsplit_once('/').unwrap_or(("", &path));
+        if let Some(parent) = DIR_MAP.get(parent_dir) {
+            parent.rw_lock.write();
+            /*
+             *      This metadata should be given by the client but until then
+             *      add a dummy metadata
+             */
+            let m = Metadata::new(FILE_SIZE, 0x666, "1".to_string(), "user".to_string());
+            DirectoryNode::new(path, m, parent.dir_name.to_string());
+            println!("{}", CREATED_DIR_SUCCESSFULLY);
+        } else {
+            println!("{}", NO_DIR_EXIST);
+        }
+    }
 }
 
-fn directory_delete(path: String) {
+pub fn directory_delete(path: String) {
     /*
      *   Call logger and wait to log operation
      */
