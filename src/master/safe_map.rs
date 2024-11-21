@@ -1,8 +1,8 @@
 use std::sync::Arc;
 use std::collections::HashMap;
-use std::sync::Mutex;
+use std::sync::{RwLock, Mutex};
 pub struct SafeMap<T> {
-    pub inner: Mutex<Option<HashMap<String, Arc<T>>>>,
+    pub inner: Mutex<Option<HashMap<String, Arc<RwLock<T>>>>>,
 }
 
 impl<T> SafeMap<T> {
@@ -19,16 +19,16 @@ impl<T> SafeMap<T> {
         }
     }
 
-    pub fn insert(&self, key: String, value: T) -> Option<Arc<T>> {
+    pub fn insert(&self, key: String, value: T) -> Option<Arc<RwLock<T>>> {
         let mut guard = self.inner.lock().unwrap();
         if let Some(map) = guard.as_mut() {
-            map.insert(key, Arc::new(value))
+            map.insert(key, Arc::new(RwLock::new(value)))
         } else {
             None
         }
     }
 
-    pub fn get(&self, key: &str) -> Option<Arc<T>> {
+    pub fn get(&self, key: &str) -> Option<Arc<RwLock<T>>> {
         let guard = self.inner.lock().unwrap();
         guard.as_ref().and_then(|map| map.get(key).cloned())
     }

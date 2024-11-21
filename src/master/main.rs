@@ -2,6 +2,8 @@
 *   The following is based on prof. Ashvin Goels Slides on GFS
 */
 
+use namespace_manager::{directory_create, file_create, list_directory};
+
 mod namespace_manager;
 mod chunk_manager;
 mod safe_map;
@@ -56,7 +58,11 @@ fn main() {
     *   Ret Instruction to chunkservers
     */
     namespace_manager::namespace_manager_init();
+    directory_create("/a".to_string());
+    f_create();
     file_read("/a/k".to_string(), 2);
+    list_directory("/a".to_string());
+    list_directory("/".to_string());
 }
 
 /*
@@ -67,8 +73,10 @@ fn main() {
 *       4. Create File Entry
 *       5. Release Directory Lock
 */
-fn file_create(){
-
+fn f_create(){
+    file_create("/a/k".to_string());
+    file_create("/a/d".to_string());
+    file_create("/c".to_string());
 }
 
 /*

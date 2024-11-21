@@ -66,11 +66,11 @@ const NO_DIR_EXIST: &str = "No such directory exists";
 const NO_FILE_EXIST: &str = "No such file exists";
 const FILE_ALREADY_EXIST: &str = "This file already exists";
 const DIR_ALREADY_EXIST: &str = "This directory already exists";
-const CREATED_DIR_SUCCESSFULLY : &str = "Successfully created directory";
-const CREATED_FILE_SUCCESSFULLY : &str = "Successfully created file";
+const CREATED_DIR_SUCCESSFULLY: &str = "Successfully created directory";
+const CREATED_FILE_SUCCESSFULLY: &str = "Successfully created file";
 const DIR_SIZE: i32 = 4000;
 const FILE_SIZE: i32 = 10000;
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Metadata {
     size: i32,
     creation_time: DateTime<Utc>,
@@ -100,32 +100,35 @@ struct FileNode {
     file_parent: String,
     file_metadata: Metadata,
     chunks: Option<Vec<Uuid>>,
-    rw_lock: RwLock<i32>,
+    // rw_lock: RwLock<i32>,
 }
 
 impl FileNode {
-    pub fn new(file_name: String, file_parent: String, file_metadata: Metadata) {
+    pub fn new(file_name: String, file_parent: String, file_metadata: Metadata) -> Result<(), String> {
         let file = Self {
             file_name: file_name.clone(),
             file_parent: file_parent.clone(),
             chunks: None,
             file_metadata: file_metadata,
-            rw_lock: RwLock::new(0),
         };
 
-        if let Some(mut guard) = DIR_MAP.inner.lock().ok() {
-            if let Some(map) = guard.as_mut() {
-                if let Some(parent) = map.get_mut(&file_parent) {
-                    // we get mutable access to the HashMap
-                    // and then to the parent node through Arc::get_mut
-                    if let Some(parent_node) = Arc::get_mut(parent) {
-                        parent_node.files.insert(file_name, file);
-                    }
-                } else {
-                    println!("This directory \"{}\" does not exist !!!", file_parent);
-                }
-            }
-        }
+        // Acquire DIR_MAP lock first
+        let dir_map_guard = DIR_MAP.inner.lock()
+            .map_err(|_| "Failed to acquire lock on DIR_MAP")?;
+            
+        let map = dir_map_guard.as_ref()
+            .ok_or("DIR_MAP not initialized")?;
+            
+        // Get parent dir reference before modifying anything
+        let parent = map.get(&file_parent)
+            .ok_or_else(|| format!("Directory '{}' does not exist", file_parent))?;
+        
+        // Then acquire write lock on parent directory
+        let mut parent_write = parent.write()
+            .map_err(|_| "Failed to acquire write lock on parent directory")?;
+        
+        parent_write.files.insert(file_name, Arc::new(RwLock::new(file)));
+        Ok(())
     }
 }
 
@@ -134,8 +137,7 @@ struct DirectoryNode {
     dir_name: String,
     dir_parent: String,
     dir_metadata: Metadata,
-    rw_lock: RwLock<i32>,
-    files: HashMap<String, FileNode>,
+    files: HashMap<String, Arc<RwLock<FileNode>>>,
 }
 
 impl DirectoryNode {
@@ -144,7 +146,6 @@ impl DirectoryNode {
             dir_name: dir_name.clone(),
             dir_metadata: dir_metadata,
             dir_parent: dir_parent.clone(),
-            rw_lock: RwLock::new(0),
             files: HashMap::new(),
         };
         /*
@@ -164,27 +165,21 @@ pub fn namespace_manager_init() {
     DIR_MAP.init();
     let root_metadata = Metadata::new(DIR_SIZE, 0x666, "0".to_string(), "root".to_string());
     DirectoryNode::new("/".to_string(), root_metadata, "/".to_string());
-    /*
-     * Add some random files for test
-     */
-    let a_metadata = Metadata::new(DIR_SIZE, 0x666, "1".to_string(), "user".to_string());
-    DirectoryNode::new("/a".to_string(), a_metadata, "/".to_string());
-
-    let file_metadata = Metadata::new(FILE_SIZE, 0x666, "1".to_string(), "user".to_string());
-    FileNode::new("k".to_string(), "/a".to_string(), file_metadata);
-
-    // println!("root : {:?} ----", DIR_MAP.get("/").unwrap());
-    // println!("/a : {:?} ----", DIR_MAP.get("/a").unwrap());
 }
 
 /////////////////////////////////////////////////////
 /// Path Lookup
 
 pub fn file_lookup(path: String, chunk_index: i32) {
-    let (directory, filename) = path.rsplit_once('/').unwrap_or(("", &path));
+    let (directory, filename) = match path.rsplit_once('/') {
+        Some((dir, name)) if dir.is_empty() => ("/", name),
+        Some((dir, name)) => (dir, name),
+        None => ("/", path.as_str()),
+    };
     println!("dir {}, file {}", directory, filename);
     if let Some(dir) = DIR_MAP.get(&directory) {
-        if let Some(file) = dir.files.get(filename) {
+        // println!("this is dir : {:?}", dir);
+        if let Some(file) = dir.read().unwrap().files.get(filename) {
             println!("{:?}", file);
         } else {
             println!("{}", NO_FILE_EXIST);
@@ -201,36 +196,35 @@ pub fn file_lookup(path: String, chunk_index: i32) {
 *   Example : file_create(/foo/bar.txt)
 */
 pub fn file_create(path: String) {
-    /*
-     *   TODO : Call logger and wait to log operation
-     *      .... Call logger ....
-     */
+    let (directory, filename) = match path.rsplit_once('/') {
+        Some((dir, name)) if dir.is_empty() => ("/", name),
+        Some((dir, name)) => (dir, name),
+        None => ("/", path.as_str()),
+    };
 
-    /*
-     *      The file is empty until a write is made to it
-     *      then we need to allocate some chunks for the
-     *      actual data. But until then only existing in the
-     *      namespace would safice :)
-     */
-    let (directory, filename) = path.rsplit_once('/').unwrap_or(("", &path));
+    // Get directory lock first
     if let Some(dir) = DIR_MAP.get(directory) {
-        dir.rw_lock.write();
+        // Then check files with a read lock
+        let dir_read = match dir.read() {
+            Ok(guard) => guard,
+            Err(_) => {
+                println!("Failed to acquire read lock on directory");
+                return;
+            }
+        };
 
-        if let Some(file) = dir.files.get(filename) {
+        if dir_read.files.get(filename).is_some() {
             println!("{}", FILE_ALREADY_EXIST);
-        } else {
-            /*
-             *      This metadata should be given by the client but until then
-             *      add a dummy metadata
-             */
+            return;
+        }
 
-            /*
-             *  Should check a bunch of metadata for permissions beforhand but will skip this 
-             *  til' later
-             *  .... Check Permissions ....
-             */
-            let m = Metadata::new(FILE_SIZE, 0x666, "1".to_string(), "user".to_string());
-            FileNode::new(filename.to_string(), dir.dir_name.to_string(), m);
+        // Drop read lock before creating file
+        drop(dir_read);
+
+        let m = Metadata::new(FILE_SIZE, 0x666, "1".to_string(), "user".to_string());
+        if let Err(e) = FileNode::new(filename.to_string(), directory.to_string(), m) {
+            println!("Failed to create file: {}", e);
+        } else {
             println!("{}", CREATED_FILE_SUCCESSFULLY);
         }
     } else {
@@ -245,25 +239,28 @@ pub fn file_delete(path: String) {
 }
 
 /*
- *      Write to a file. 
- *      1. Allocate some chunks according to the 
+ *      Write to a file.
+ *      1. Allocate some chunks according to the
  *         chunkmanagers best fit chunkservers
- * 
- *      2. Update chunkservers to tell them the 
+ *
+ *      2. Update chunkservers to tell them the
  *         chunk handles.
- * 
- *      
+ *
+ *
  */
-pub fn file_write(path: String, size: i64){
-
-}
-
-
+pub fn file_write(path: String, size: i64) {}
 
 ////////////////////////////////////////////////////
 /// Directory Operations
 
-pub fn list_directory(path: String) {}
+pub fn list_directory(path: String) {
+    if let Some(dir) = DIR_MAP.get(path.as_str()) {
+        println!("------------------------------------------");
+        println!("{:?}", dir.read().unwrap().files);
+    } else {
+        println!("{}", NO_DIR_EXIST);
+    }
+}
 
 pub fn directory_create(path: String) {
     /*
@@ -272,18 +269,21 @@ pub fn directory_create(path: String) {
     if let Some(new_dir) = DIR_MAP.get(path.as_str()) {
         println!("{}", DIR_ALREADY_EXIST);
     } else {
-        let (parent_dir, new_dir) = path.rsplit_once('/').unwrap_or(("", &path));
+        let (parent_dir, dir) = match path.rsplit_once('/') {
+            Some((dir, name)) if dir.is_empty() => ("/", name),
+            Some((dir, name)) => (dir, name),
+            None => ("/", path.as_str()),
+        };
         if let Some(parent) = DIR_MAP.get(parent_dir) {
-            parent.rw_lock.write();
             /*
              *      This metadata should be given by the client but until then
              *      add a dummy metadata
              */
             let m = Metadata::new(FILE_SIZE, 0x666, "1".to_string(), "user".to_string());
-            DirectoryNode::new(path, m, parent.dir_name.to_string());
+            DirectoryNode::new(path, m, parent.read().unwrap().dir_name.to_string());
             println!("{}", CREATED_DIR_SUCCESSFULLY);
         } else {
-            println!("{}", NO_DIR_EXIST);
+            println!("{} : {}", NO_DIR_EXIST, parent_dir);
         }
     }
 }
