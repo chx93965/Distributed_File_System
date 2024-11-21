@@ -4,6 +4,10 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::sync::RwLock;
+use uuid::Uuid;
+
+use crate::chunk_manager;
+
 /*
 *   A managers for all the files and directories
 *   in the file system
@@ -11,23 +15,18 @@ use std::sync::RwLock;
 *
 *   Data Structures :
 *       1.  Directory Node {
-*                Directory Name         : String;
-*                Directory Parent       : Directory Node;
+*                Directory Name         : String
+*                Directory Parent       : String
 *                Directory Metadata     : Metadata
 *                Read Write Lock        : RW Lock
-*
-*                Children = {
-*                    Files          : List < File Node >
-*                    Directories    : List < Dir Node >
-*                }
-*
+*                Files                  : List<File Node>
 *
 *            }
 *
 *       2.  File Node {
 *               File Name           : String
-*               File Parent         : Directory Node
-*               Chunks              : List<Chunk Handle>
+*               File Parent         : String
+*               Chunks              : List<Chunk Handle(uuid)>
 *               File Metadata       : Metadata
 *               Read Write Lock     : RW Lock
 *           }
@@ -97,16 +96,32 @@ struct FileNode {
     file_name       : String,
     file_parent     : String,
     file_metadata   : Metadata,
+    chunks          : Option<Vec<Uuid>>,
     rw_lock         : RwLock<i32>,
 }
 
 impl FileNode {
-    pub fn new(file_name: String, file_parent: String, file_metadata: Metadata) -> Self {
-        Self {
+    pub fn new(file_name: String, file_parent: String, file_metadata: Metadata) {
+        let kk = Self {
             file_name: file_name,
-            file_parent: file_parent,
+            file_parent: file_parent.clone(),
+            chunks : None,
             file_metadata: file_metadata,
             rw_lock: RwLock::new(0),
+        };
+
+        if let Some(mut guard) = DIR_MAP.inner.lock().ok() {
+            if let Some(map) = guard.as_mut() {
+                if let Some(parent) = map.get_mut(&file_parent) {
+                    // we get mutable access to the HashMap
+                    // and then to the parent node through Arc::get_mut
+                    if let Some(parent_node) = Arc::get_mut(parent) {
+                        parent_node.files.push(kk);
+                    } 
+                } else {
+                    println!("This directory \"{}\" does not exist !!!", file_parent);
+                }
+            }
         }
     }
 }
@@ -119,7 +134,7 @@ struct DirectoryNode {
     dir_parent: String,
     dir_metadata: Metadata,
     rw_lock: RwLock<i32>,
-    children: DirectoryChildren,
+    files: Vec<FileNode>,
 }
 
 impl DirectoryNode  {
@@ -127,31 +142,22 @@ impl DirectoryNode  {
         let node = DirectoryNode {
             dir_name: dir_name.clone(),
             dir_metadata: dir_metadata,
-            dir_parent : dir_parent,
+            dir_parent : dir_parent.clone(),
             rw_lock: RwLock::new(0),
-            children: DirectoryChildren::new(),
+            files: Vec::new(),
         };
         /*
         *   Add the new node to the directory map
         */
-        DIR_MAP.insert(dir_name.clone(), node);
+        if DIR_MAP.get(&dir_parent).is_some() || dir_parent == "/" {
+            DIR_MAP.insert(dir_name.clone(), node);
+        } else {
+            println!("This directory \"{}\" does not exist !!!", dir_parent);
+        }
     }
 }
 
-#[derive(Debug)]
-struct DirectoryChildren {
-    directories: Vec<DirectoryNode>,
-    files: Vec<FileNode>,
-}
 
-impl DirectoryChildren {
-    pub const fn new() -> Self {
-        return Self {
-            directories: Vec::new(),
-            files: Vec::new(),
-        };
-    }
-}
 
 pub struct SafeMap {
     inner: Mutex<Option<HashMap<String, Arc<DirectoryNode>>>>,
@@ -190,11 +196,19 @@ static DIR_MAP: SafeMap = SafeMap::new();
 
 pub fn namespace_manager_init() {
     DIR_MAP.init();
-    let mut root_metadata = Metadata::new(DIR_SIZE, 0x666, "0".to_string(), "root".to_string());
+    let root_metadata = Metadata::new(DIR_SIZE, 0x666, "0".to_string(), "root".to_string());
     DirectoryNode::new("/".to_string(), root_metadata, "/".to_string());
     /*
     * Add some random files for test
     */
+    let a_metadata = Metadata::new(DIR_SIZE, 0x666, "1".to_string(), "user".to_string());
+    DirectoryNode::new("/a".to_string(), a_metadata, "/".to_string());
+
+    let file_metadata = Metadata::new(DIR_SIZE, 0x666, "1".to_string(), "user".to_string());
+    FileNode::new("k".to_string(), "/a".to_string(), file_metadata); 
+
+    println!("root : {:?} ----", DIR_MAP.get("/").unwrap());
+    println!("/a : {:?} ----", DIR_MAP.get("/a").unwrap());
 }
 
 /////////////////////////////////////////////////////
@@ -207,10 +221,16 @@ pub fn path_lookup(path: String, chunk_index: i32) {
 ////////////////////////////////////////////////////
 /// File Operations
 
+
+/*
+*   Example : file_create(/foo/bar.txt)
+*/
 fn file_create(path: String) {
     /*
      *   Call logger and wait to log operation
      */
+    
+    
 }
 
 fn file_delete(path: String) {

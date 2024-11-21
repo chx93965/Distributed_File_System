@@ -3,7 +3,7 @@
 */
 
 mod namespace_manager;
-
+mod chunk_manager;
 
 /*  
 *   Maintains filesystem's metadata in memory :
@@ -55,7 +55,7 @@ fn main() {
     *   Ret Instruction to chunkservers
     */
     namespace_manager::namespace_manager_init();
-    file_read("aaa".to_string(), 2);
+    file_read("/a/k".to_string(), 2);
 }
 
 /*
