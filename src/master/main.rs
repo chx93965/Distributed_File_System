@@ -4,6 +4,7 @@
 
 mod namespace_manager;
 mod chunk_manager;
+mod safe_map;
 
 /*  
 *   Maintains filesystem's metadata in memory :
@@ -90,7 +91,7 @@ fn file_delete(){
 *       4. Release Directory Lock
 */
 fn file_read(file_name:String, chunk_index:i32){
-    namespace_manager::path_lookup(file_name, chunk_index);
+    namespace_manager::file_lookup(file_name, chunk_index);
 }
 
 /*
