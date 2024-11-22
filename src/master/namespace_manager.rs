@@ -2,6 +2,7 @@ use chrono::prelude::*;
 use chrono::DateTime;
 
 use crate::chunk_manager;
+use crate::chunk_manager::{get_chunks, write_chunks};
 use crate::safe_map::SafeMap;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -99,35 +100,44 @@ struct FileNode {
     file_name: String,
     file_parent: String,
     file_metadata: Metadata,
-    chunks: Option<Vec<Uuid>>,
+    chunks: Vec<Vec<Uuid>>,
     // rw_lock: RwLock<i32>,
 }
 
 impl FileNode {
-    pub fn new(file_name: String, file_parent: String, file_metadata: Metadata) -> Result<(), String> {
+    pub fn new(
+        file_name: String,
+        file_parent: String,
+        file_metadata: Metadata,
+    ) -> Result<(), String> {
         let file = Self {
             file_name: file_name.clone(),
             file_parent: file_parent.clone(),
-            chunks: None,
+            chunks: Vec::new(),
             file_metadata: file_metadata,
         };
 
         // Acquire DIR_MAP lock first
-        let dir_map_guard = DIR_MAP.inner.lock()
+        let dir_map_guard = DIR_MAP
+            .inner
+            .lock()
             .map_err(|_| "Failed to acquire lock on DIR_MAP")?;
-            
-        let map = dir_map_guard.as_ref()
-            .ok_or("DIR_MAP not initialized")?;
-            
+
+        let map = dir_map_guard.as_ref().ok_or("DIR_MAP not initialized")?;
+
         // Get parent dir reference before modifying anything
-        let parent = map.get(&file_parent)
+        let parent = map
+            .get(&file_parent)
             .ok_or_else(|| format!("Directory '{}' does not exist", file_parent))?;
-        
+
         // Then acquire write lock on parent directory
-        let mut parent_write = parent.write()
+        let mut parent_write = parent
+            .write()
             .map_err(|_| "Failed to acquire write lock on parent directory")?;
-        
-        parent_write.files.insert(file_name, Arc::new(RwLock::new(file)));
+
+        parent_write
+            .files
+            .insert(file_name, Arc::new(RwLock::new(file)));
         Ok(())
     }
 }
@@ -159,7 +169,7 @@ impl DirectoryNode {
     }
 }
 
-static DIR_MAP: SafeMap<DirectoryNode> = SafeMap::new();
+static DIR_MAP: SafeMap<String, DirectoryNode> = SafeMap::new();
 
 pub fn namespace_manager_init() {
     DIR_MAP.init();
@@ -170,22 +180,22 @@ pub fn namespace_manager_init() {
 /////////////////////////////////////////////////////
 /// Path Lookup
 
-pub fn file_lookup(path: String, chunk_index: i32) {
+pub fn file_lookup(path: String) -> Result<Vec<Vec<Uuid>>, String>{
     let (directory, filename) = match path.rsplit_once('/') {
         Some((dir, name)) if dir.is_empty() => ("/", name),
         Some((dir, name)) => (dir, name),
         None => ("/", path.as_str()),
     };
     println!("dir {}, file {}", directory, filename);
-    if let Some(dir) = DIR_MAP.get(&directory) {
+    if let Some(dir) = DIR_MAP.get(&directory.to_string()) {
         // println!("this is dir : {:?}", dir);
         if let Some(file) = dir.read().unwrap().files.get(filename) {
-            println!("{:?}", file);
+            return Ok(file.read().unwrap().chunks.clone());
         } else {
-            println!("{}", NO_FILE_EXIST);
+            return Err(format!("{}",NO_FILE_EXIST));
         }
     } else {
-        println!("{}", NO_DIR_EXIST);
+        return Err(format!("{}",NO_DIR_EXIST));
     }
 }
 
@@ -203,7 +213,7 @@ pub fn file_create(path: String) {
     };
 
     // Get directory lock first
-    if let Some(dir) = DIR_MAP.get(directory) {
+    if let Some(dir) = DIR_MAP.get(&directory.to_string()) {
         // Then check files with a read lock
         let dir_read = match dir.read() {
             Ok(guard) => guard,
@@ -248,13 +258,46 @@ pub fn file_delete(path: String) {
  *
  *
  */
-pub fn file_write(path: String, size: i64) {}
+pub fn file_write(path: String, size: i64) -> Result<(Vec<(Uuid,String)>), String> {
+    let (directory, filename) = match path.rsplit_once('/') {
+        Some((dir, name)) if dir.is_empty() => ("/", name),
+        Some((dir, name)) => (dir, name),
+        None => ("/", path.as_str()),
+    };
+
+    let parent = DIR_MAP
+        .get(&directory.to_string())
+        .ok_or_else(|| format!("Directory '{}' does not exist", directory))?;
+
+    let dir_read = match parent.read() {
+        Ok(guard) => guard,
+        Err(e) => {
+            return Err(e.to_string());
+        }
+    };
+
+    let file: &Arc<RwLock<FileNode>> = dir_read
+        .files
+        .get(filename)
+        .ok_or_else(|| format!("No such file {} exists", filename))?;
+
+    // parent.read().unwrap().files.get()
+    let chunks = write_chunks(size);
+    file.write().unwrap().chunks.push(chunks.iter().map(|x| x.0).collect::<Vec<Uuid>>());
+    Ok(chunks)
+}
+
+pub fn file_read(path: String, chunk_index: usize) -> Result<Vec<(Uuid, String)>, String>{
+    let chunks = file_lookup(path)?;
+    let tuples = get_chunks(chunks[chunk_index].clone());
+    Ok(tuples)
+}
 
 ////////////////////////////////////////////////////
 /// Directory Operations
 
 pub fn list_directory(path: String) {
-    if let Some(dir) = DIR_MAP.get(path.as_str()) {
+    if let Some(dir) = DIR_MAP.get(&path) {
         println!("------------------------------------------");
         println!("{:?}", dir.read().unwrap().files);
     } else {
@@ -266,7 +309,7 @@ pub fn directory_create(path: String) {
     /*
      *   Call logger and wait to log operation
      */
-    if let Some(new_dir) = DIR_MAP.get(path.as_str()) {
+    if let Some(new_dir) = DIR_MAP.get(&path) {
         println!("{}", DIR_ALREADY_EXIST);
     } else {
         let (parent_dir, dir) = match path.rsplit_once('/') {
@@ -274,7 +317,7 @@ pub fn directory_create(path: String) {
             Some((dir, name)) => (dir, name),
             None => ("/", path.as_str()),
         };
-        if let Some(parent) = DIR_MAP.get(parent_dir) {
+        if let Some(parent) = DIR_MAP.get(&parent_dir.to_string()) {
             /*
              *      This metadata should be given by the client but until then
              *      add a dummy metadata

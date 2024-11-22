@@ -58,11 +58,21 @@ fn main() {
     *   Ret Instruction to chunkservers
     */
     namespace_manager::namespace_manager_init();
+    chunk_manager::chunk_manager_init();
     directory_create("/a".to_string());
-    f_create();
-    file_read("/a/k".to_string(), 2);
-    list_directory("/a".to_string());
-    list_directory("/".to_string());
+    directory_create("/a/b".to_string());
+    file_create("/a/k".to_string());
+    file_create("/a/d".to_string());
+    file_create("/c".to_string());
+
+    let ans = namespace_manager::file_write("/a/d".to_string(), 10);
+    println!("write : {:?}", ans);
+    println!("--------------------------------");
+    let a2 = namespace_manager::file_read("/a/d".to_string(), 0);
+    println!("read : {:?}", a2);
+    // file_read("/a/k".to_string(), 2);
+    // list_directory("/a".to_string());
+    // list_directory("/a/b".to_string());
 }
 
 /*
@@ -98,8 +108,8 @@ fn file_delete(){
 *       3. Check Permissions
 *       4. Release Directory Lock
 */
-fn file_read(file_name:String, chunk_index:i32){
-    namespace_manager::file_lookup(file_name, chunk_index);
+fn file_read(file_name:String, chunk_index:usize){
+    // namespace_manager::file_lookup(file_name, chunk_index);
 }
 
 /*
