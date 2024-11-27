@@ -59,34 +59,6 @@ fn main() {
     */
     namespace_manager::namespace_manager_init();
     chunk_manager::chunk_manager_init();
-    directory_create("/a".to_string());
-    directory_create("/a/b".to_string());
-    file_create("/a/k".to_string());
-    file_create("/a/d".to_string());
-    file_create("/c".to_string());
-
-    let ans = namespace_manager::file_write("/a/d".to_string(), 10);
-    println!("write : {:?}", ans);
-    println!("--------------------------------");
-    let a2 = namespace_manager::file_read("/a/d".to_string(), 0);
-    println!("read : {:?}", a2);
-    // file_read("/a/k".to_string(), 2);
-    // list_directory("/a".to_string());
-    // list_directory("/a/b".to_string());
-}
-
-/*
-*   All done by namespace manager : 
-*       1. Lookup File Directory 
-*       2. Acquire Directory Lock
-*       3. Check Permissions
-*       4. Create File Entry
-*       5. Release Directory Lock
-*/
-fn f_create(){
-    file_create("/a/k".to_string());
-    file_create("/a/d".to_string());
-    file_create("/c".to_string());
 }
 
 /*
@@ -109,7 +81,7 @@ fn file_delete(){
 *       4. Release Directory Lock
 */
 fn file_read(file_name:String, chunk_index:usize){
-    // namespace_manager::file_lookup(file_name, chunk_index);
+    namespace_manager::file_read(file_name, chunk_index).unwrap();
 }
 
 /*
@@ -119,8 +91,8 @@ fn file_read(file_name:String, chunk_index:usize){
 *       3. Check Permissions
 *       4. Release Directory Lock
 */
-fn file_write(){
-
+fn file_write(file_name:String, size:usize){
+    namespace_manager::file_write(file_name, size).unwrap();
 }
 
 
@@ -132,8 +104,8 @@ fn file_write(){
 *       4. Create Directory
 *       5. Release Parent Lock
 */
-fn direcotry_create(){
-
+fn direcotry_create(path:String){
+    namespace_manager::directory_create(path);
 }
 
 /*

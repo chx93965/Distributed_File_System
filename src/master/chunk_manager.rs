@@ -49,18 +49,22 @@ pub fn chunk_manager_init() {
     SERVER_MAP.init();
     CHUNK_MAP.init();
 
-    SERVER_MAP.insert("localhost".to_string(), Vec::new());
-    SERVER_MAP.insert("host1".to_string(), Vec::new());
-    SERVER_MAP.insert("host2".to_string(), Vec::new());
-    SERVER_MAP.insert("host3".to_string(), Vec::new());
-    SERVER_MAP.insert("host4".to_string(), Vec::new());
+
+    /*
+     *  Some dummy servers init
+     */
+    // SERVER_MAP.insert("localhost".to_string(), Vec::new());
+    // SERVER_MAP.insert("host1".to_string(), Vec::new());
+    // SERVER_MAP.insert("host2".to_string(), Vec::new());
+    // SERVER_MAP.insert("host3".to_string(), Vec::new());
+    // SERVER_MAP.insert("host4".to_string(), Vec::new());
 }
 
 /*
 *   Function that returns the best chunks to hold the
 *   data
 */
-pub fn write_chunks(size: i64) -> Vec<(Uuid, String)> {
+pub fn write_chunks(size: usize) -> Vec<(Uuid, String)> {
     /*
      *  1. Find best chunkservers (At the moment we do it randomly)
      *  2. Generate chunk handles
