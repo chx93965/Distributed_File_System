@@ -187,7 +187,7 @@ mod tests {
         chunk_manager.add_chunk(vec![0; 1024], Uuid::new_v4());
         chunk_manager.add_chunk(vec![0; 1024], Uuid::new_v4());
 
-        let mut chunk_manager = ChunkManager::new(1024, dir.to_string());
+        let chunk_manager = ChunkManager::new(1024, dir.to_string());
         assert_eq!(chunk_manager.chunks.chunk_count, 2);
     }
 }
