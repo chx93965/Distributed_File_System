@@ -1,0 +1,131 @@
+{
+  "master_node": {
+    "namespace": {
+      "files": {
+        "/user/alice/photos/vacation.jpg": {
+          "filename": "vacation.jpg",
+          "size": 15728640,  // 15MB
+          "chunks": [
+            "0x3F28A91C",
+            "0x3F28A91D"
+          ],
+          "permissions": {
+            "owner": "alice",
+            "group": "users",
+            "mode": "rw-r--r--"
+          },
+          "creation_time": "2024-03-15T14:30:22Z",
+          "replica_count": 3
+        },
+        "/logs/app/server1/access.log": {
+          "filename": "access.log",
+          "size": 67108864,  // 64MB
+          "chunks": [
+            "0x4A1B23CF",
+            "0x4A1B23D0",
+            "0x4A1B23D1"
+          ],
+          "permissions": {
+            "owner": "system",
+            "group": "logs",
+            "mode": "rw-r-----"
+          },
+          "creation_time": "2024-03-16T00:00:00Z",
+          "replica_count": 2
+        }
+      },
+      "directories": {
+        "/user/alice/photos": {
+          "path": "/user/alice/photos",
+          "children": [
+            "vacation.jpg",
+            "birthday.jpg",
+            "family"
+          ],
+          "permissions": {
+            "owner": "alice",
+            "group": "users",
+            "mode": "rwxr-xr-x"
+          },
+          "creation_time": "2024-01-01T10:15:30Z"
+        },
+        "/logs/app/server1": {
+          "path": "/logs/app/server1",
+          "children": [
+            "access.log",
+            "error.log",
+            "debug.log"
+          ],
+          "permissions": {
+            "owner": "system",
+            "group": "logs",
+            "mode": "rwxr-x---"
+          },
+          "creation_time": "2024-01-01T00:00:00Z"
+        }
+      }
+    },
+    "chunk_metadata": {
+      "0x3F28A91C": {
+        "chunk_id": "0x3F28A91C",
+        "version": 1234,
+        "chunk_servers": [
+          "chunkserver1.dc1.example.com:50051",
+          "chunkserver7.dc1.example.com:50051",
+          "chunkserver4.dc2.example.com:50051"
+        ],
+        "lease_expiration": "2024-03-16T14:45:22Z",
+        "size": 8388608,  // 8MB
+        "checksum": "sha256:2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"
+      },
+      "0x3F28A91D": {
+        "chunk_id": "0x3F28A91D",
+        "version": 1234,
+        "chunk_servers": [
+          "chunkserver2.dc1.example.com:50051",
+          "chunkserver8.dc1.example.com:50051",
+          "chunkserver5.dc2.example.com:50051"
+        ],
+        "lease_expiration": "2024-03-16T14:45:22Z",
+        "size": 7340032,  // 7MB
+        "checksum": "sha256:486ea46224d1bb4fb680f34f7c9ad96a8f24ec88be73ea8e5a6c65260e9cb8a7"
+      },
+      "0x4A1B23CF": {
+        "chunk_id": "0x4A1B23CF",
+        "version": 5678,
+        "chunk_servers": [
+          "chunkserver3.dc1.example.com:50051",
+          "chunkserver6.dc2.example.com:50051"
+        ],
+        "lease_expiration": "2024-03-16T14:30:00Z",
+        "size": 67108864,  // 64MB
+        "checksum": "sha256:9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
+      }
+    },
+    "chunk_server_manager": {
+      "active_chunk_servers": {
+        "chunkserver1.dc1.example.com:50051": {
+          "last_heartbeat": "2024-03-16T14:44:22Z",
+          "total_space": 1099511627776,  // 1TB
+          "used_space": 549755813888,    // 512GB
+          "status": "HEALTHY"
+        },
+        "chunkserver2.dc1.example.com:50051": {
+          "last_heartbeat": "2024-03-16T14:44:20Z",
+          "total_space": 1099511627776,  // 1TB
+          "used_space": 604611567616,    // 563GB
+          "status": "HEALTHY"
+        }
+      },
+      "rebalancing_tasks": [
+        {
+          "chunk_id": "0x4A1B23CF",
+          "source": "chunkserver3.dc1.example.com:50051",
+          "destination": "chunkserver9.dc1.example.com:50051",
+          "status": "IN_PROGRESS",
+          "progress": 45
+        }
+      ]
+    }
+  }
+}
