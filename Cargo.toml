@@ -36,5 +36,5 @@ name = "chunk"
 path = "src/chunk/chunk.rs"
 
 [[bin]]
-name = "client`"
+name = "client"
 path = "src/client/main.rs"
