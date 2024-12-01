@@ -8,3 +8,7 @@ edition = "2021"
 clap = { version = "4.5.21", features = ["derive"] }
 reqwest = { version = "0.12.9", features = ["json"] }
 tokio = { version = "1.41.1", features = ["rt", "rt-multi-thread", "macros"] }
+
+[[bin]]
+name = "client`"
+path = "src/client/main.rs"
