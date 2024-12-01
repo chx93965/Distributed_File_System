@@ -4,10 +4,36 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-# client
+chrono = {version = "0.4.38", features = ["serde"] }
+rand = "0.8"
+env_logger = "0.11.5"
+log = "0.4.22"
+rocket = {version = "0.5.1", features = ["json", "serde_json"]}
+serde = "1.0.215"
+serde_json = "1.0.133"
+sysinfo = "0.32.0"
 clap = { version = "4.5.21", features = ["derive"] }
 reqwest = { version = "0.12.9", features = ["json"] }
 tokio = { version = "1.41.1", features = ["rt", "rt-multi-thread", "macros"] }
+
+[dependencies.uuid]
+version = "1.11.0"
+features = [
+    "v4",                # Lets you generate random UUIDs
+    "fast-rng",          # Use a faster (but still sufficiently random) RNG
+    "macro-diagnostics", # Enable better diagnostics for compile-time UUIDs
+]
+[lib]
+name = "lib"
+path = "src/lib.rs"
+
+[[bin]]
+name = "master"
+path = "src/master/main.rs"
+
+[[bin]]
+name = "chunk"
+path = "src/chunk/chunk.rs"
 
 [[bin]]
 name = "client`"
