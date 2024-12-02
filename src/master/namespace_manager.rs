@@ -258,7 +258,7 @@ pub fn file_delete(path: String) {
  *
  *
  */
-pub fn file_write(path: String, size: usize) -> Result<(Vec<(Uuid,String)>), String> {
+pub fn file_write(path: String, size: usize) -> Result<Vec<(Uuid,String)>, String> {
     let (directory, filename) = match path.rsplit_once('/') {
         Some((dir, name)) if dir.is_empty() => ("/", name),
         Some((dir, name)) => (dir, name),
