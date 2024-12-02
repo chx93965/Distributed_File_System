@@ -2,6 +2,12 @@
 *   The following is based on prof. Ashvin Goels Slides on GFS
 */
 
+#[macro_use]
+extern crate rocket;
+use std::io::Error;
+use rocket::{get, post, routes, State};
+use rocket::serde::{json::Json, Serialize, Deserialize};
+use uuid::Uuid;
 use namespace_manager::{directory_create, file_create, list_directory};
 
 mod namespace_manager;
@@ -45,9 +51,16 @@ mod safe_map;
 *
 */
 
-fn main() {
+#[derive(Serialize, Deserialize)]
+struct ChunkInfo {
+    uuid: String,
+    content: String,
+}
 
-
+#[launch]
+fn rocket() -> _ {
+    namespace_manager::namespace_manager_init();
+    chunk_manager::chunk_manager_init();
     /*
     *   Input  : Get (file name, chunk index) from client
     *   Output : Ret (chunk handle, chunk locations) to client
@@ -57,9 +70,10 @@ fn main() {
     *   Get chunkserver state from chunkservers
     *   Ret Instruction to chunkservers
     */
-    namespace_manager::namespace_manager_init();
-    chunk_manager::chunk_manager_init();
+    rocket::build()
+        .mount("/", routes![file_read, file_write, direcotry_create])
 }
+
 
 /*
 *   All done by namespace manager : 
@@ -80,8 +94,20 @@ fn file_delete(){
 *       3. Check Permissions
 *       4. Release Directory Lock
 */
-fn file_read(file_name:String, chunk_index:usize){
-    namespace_manager::file_read(file_name, chunk_index).unwrap();
+
+fn serialize_file(file: Vec<(Uuid, String)>) -> Vec<ChunkInfo>{
+    let mut chunks = Vec::new();
+    for (uuid, content) in file{
+        chunks.push(ChunkInfo{uuid: uuid.to_string(), content: content});
+    }
+    chunks
+}
+
+#[get("/file_read/<file_name>/<chunk_index>")]
+async fn file_read(file_name:String, chunk_index:usize) -> Json<Vec<ChunkInfo>>{
+    // namespace_manager::file_read(file_name, chunk_index).unwrap()
+    let chunks = namespace_manager::file_read(file_name, chunk_index).unwrap();
+    Json(serialize_file(chunks))
 }
 
 /*
@@ -91,8 +117,11 @@ fn file_read(file_name:String, chunk_index:usize){
 *       3. Check Permissions
 *       4. Release Directory Lock
 */
-fn file_write(file_name:String, size:usize){
-    namespace_manager::file_write(file_name, size).unwrap();
+#[post("/file_write/<file_name>/<size>")]
+async fn file_write(file_name:String, size:usize) -> Json<Vec<ChunkInfo>>{
+    // namespace_manager::file_write(file_name, size).unwrap()
+    let chunks = namespace_manager::file_write(file_name, size).unwrap();
+    Json(serialize_file(chunks))
 }
 
 
@@ -104,8 +133,10 @@ fn file_write(file_name:String, size:usize){
 *       4. Create Directory
 *       5. Release Parent Lock
 */
-fn direcotry_create(path:String){
+#[post("/directory/<path>")]
+async fn direcotry_create(path:String) -> Result<(), Error> {
     namespace_manager::directory_create(path);
+    Ok(())
 }
 
 /*
