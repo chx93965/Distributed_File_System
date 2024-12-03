@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 use chrono::prelude::*;
 use chrono::DateTime;
 

@@ -1,3 +1,4 @@
+#![allow(unused)]
 use reqwest::Client;
 use std::error::Error;
 

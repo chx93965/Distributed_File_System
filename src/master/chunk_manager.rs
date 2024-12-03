@@ -17,6 +17,7 @@
 *       3. Chunkserver Map      : Map (IP (String) -> List<Uuid>)
 *
 */
+#![allow(unused)]
 
 use crate::safe_map::SafeMap;
 use chrono::{DateTime, Utc};
@@ -64,7 +65,7 @@ pub fn chunk_manager_init() {
 *   Function that returns the best chunks to hold the
 *   data
 */
-pub fn write_chunks(size: usize) -> Vec<(Uuid, String)> {
+pub fn write_chunks(_size: usize) -> Vec<(Uuid, String)> {
     /*
      *  1. Find best chunkservers (At the moment we do it randomly)
      *  2. Generate chunk handles

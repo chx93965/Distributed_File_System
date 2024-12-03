@@ -7,7 +7,11 @@ use rocket::{
     tokio::{self, io::AsyncReadExt, sync::Mutex},
     State,
 };
-use std::sync::Arc;
+use std::{
+    sync::Arc,
+    net::TcpListener,
+    io::ErrorKind,
+};
 
 mod chunk_manager;
 mod heartbeat_manager;
@@ -18,6 +22,8 @@ extern crate rocket;
 
 const CHUNKS_DIR: &str = "chunks";
 const CHUNK_SIZE_MAX: usize = 1024 * 1024 * 256; // 256 MB
+const START_PORT: u16 = 8000;
+const MAX_PORT: u16 = 8100;
 
 type SharedChunkManager = Arc<Mutex<chunk_manager::ChunkManager>>;
 
@@ -26,7 +32,7 @@ async fn main() {
     // Set the logging level and format
     log_manager::set_logging(&[
         log::Level::Info,
-        //log::Level::Debug,
+        log::Level::Debug,
         log::Level::Warn,
         log::Level::Error,
     ]);
@@ -40,8 +46,22 @@ async fn main() {
     // Start the heartbeat manager in the background
     tokio::spawn(heartbeat_manager::heartbeat());
 
-    // Launch the Rocket server
+    // Try to find an available port
+    let port = find_available_port(START_PORT, MAX_PORT);
+
+    // If no port was found, panic
+    if port.is_none() {
+        panic!("No available port found between {} and {}", START_PORT, MAX_PORT);
+    }
+
+    // Configure rocket config
+    let config = rocket::Config {
+        port: port.unwrap(),
+        ..Default::default()
+    };
+    
     let app = rocket::build()
+        .configure(config)
         .manage(chunk_manager)
         .register("/", catchers![bad_request, not_found, payload_too_large])
         .mount("/", routes![hello])
@@ -52,6 +72,29 @@ async fn main() {
 
     // Start the Rocket server
     app.launch().await.unwrap();
+}
+
+/// Attempts to find an available port between `start` and `end`.
+/// Returns the first available port, or `None` if no port is available.
+fn find_available_port(start: u16, end: u16) -> Option<u16> {
+    for port in start..=end {
+        if is_port_available(port) {
+            return Some(port);
+        }
+    }
+    None
+}
+
+/// Checks if a given port is available by attempting to bind to it.
+fn is_port_available(port: u16) -> bool {
+    let addr = format!("127.0.0.1:{}", port);
+    let listener = TcpListener::bind(&addr);
+    // unbind the listener
+    match listener {
+        Ok(_) => true,  // Port is available
+        Err(e) if e.kind() == ErrorKind::AddrInUse => false,  // Port is in use
+        Err(_) => false,  // Other errors
+    }
 }
 
 #[get("/")]

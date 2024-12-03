@@ -48,7 +48,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
     match target {
         Target::Master => {
-            let master_client = master_client::MasterClient::new("http://localhost:8080");
+            let _master_client = master_client::MasterClient::new("http://localhost:8080");
         }
         Target::ChunkServer => {
             let chunk_server_client = ChunkServerClient::new("http://localhost:8081");

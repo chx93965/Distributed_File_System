@@ -1,7 +1,7 @@
 /*
 *   The following is based on prof. Ashvin Goels Slides on GFS
 */
-
+#![allow(unused)]
 #[macro_use]
 extern crate rocket;
 use std::io::Error;
