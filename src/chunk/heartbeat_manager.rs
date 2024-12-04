@@ -2,28 +2,11 @@ use rocket::tokio::time::{sleep, Duration};
 use serde::{Deserialize, Serialize};
 use std::{path::Path, time::SystemTime};
 use sysinfo::{Disks, System};
+use reqwest::{Error, Client};
+use heartbeat::{Disk, Metadata, HEARTBEAT_INTERVAL};
 
-const HEARTBEAT_INTERVAL: u64 = 2;
+#[path = "../shared/heartbeat.rs"] mod heartbeat;
 
-#[derive(Serialize, Deserialize)]
-struct Disk {
-    name: String,
-    kind: String,
-    file_system: String,
-    mount_point: String,
-    total_space: u64,
-    available_space: u64,
-}
-
-#[derive(Serialize, Deserialize)]
-struct Metadata {
-    os_name: String,
-    os_version: String,
-    host_name: String,
-    chunkserver_id: u32,
-    last_heartbeat: u64,
-    disk_info: Disk,
-}
 
 ///
 /// Periodically sends a heartbeat to the master server.
@@ -115,7 +98,18 @@ pub async fn heartbeat() {
         let metadata_json = serde_json::to_string(&metadata).unwrap();
         debug!("Metadata: {}", metadata_json);
 
-        // Todo: send metadata to master server
+        // Todo: Set configurable master address
+        let response = match Client::new()
+            .post("http://localhost:8000/heartbeat")
+            .json(&metadata)
+            .send()
+            .await {
+                Ok(response) => response,
+                Err(error) => {
+                    error!("Server unreachable: {}", error);
+                    return;
+                }
+        };
 
         sleep(interval).await;
     }
