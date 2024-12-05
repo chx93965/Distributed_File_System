@@ -1,0 +1,21 @@
+services:
+  master:
+    image: dfs
+    build:
+      context: .
+      args:
+        DOCKER_BUILDKIT: 1
+    ports:
+      - 8888:8888
+    env_file: .env.docker
+    command: master
+
+  chunkserver:
+    image: dfs
+    env_file: .env.docker
+    command: chunk
+
+  client:
+    image: dfs
+    env_file: .env.docker
+    command: client
