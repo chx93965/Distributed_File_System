@@ -9,13 +9,12 @@ use rocket::{get, post, routes, State};
 use rocket::serde::{json::Json, Serialize, Deserialize};
 use uuid::Uuid;
 use namespace_manager::{directory_create, file_create, list_directory};
-use heartbeat::{Disk, Metadata};
 
 mod namespace_manager;
 mod chunk_manager;
 mod safe_map;
 mod heartbeat_manager;
-#[path = "../shared/heartbeat.rs"] mod heartbeat;
+
 /*
 *   Maintains filesystem's metadata in memory :
 *       1. Chunk namespace, i.e., all chunk handles in the system
@@ -167,7 +166,7 @@ fn update_namespace(){
 *   Output : Chunk Location - Send Data to Chunk
 */
 #[post("/heartbeat", format = "json", data = "<metadata>")]
-async fn receive_heartbeat(metadata: Json<Metadata>) -> Result<(), Error> {
+async fn receive_heartbeat(metadata: Json<heartbeat_manager::Metadata>) -> Result<(), Error> {
     heartbeat_manager::receive_heartbeat(metadata);
     Ok(())
 }

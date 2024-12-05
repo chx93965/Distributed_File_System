@@ -21,7 +21,7 @@ use std::time::Duration;
 use sysinfo::{Disks, System};
 use reqwest::{Error, Client};
 use rocket::serde::json::Json;
-use heartbeat::{Disk, Metadata, HEARTBEAT_INTERVAL};
+pub use heartbeat::{Disk, Metadata, HEARTBEAT_INTERVAL};
 
 #[path = "../shared/heartbeat.rs"]
 mod heartbeat;
