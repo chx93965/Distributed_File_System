@@ -8,6 +8,7 @@ use std::io::Error;
 use rocket::{get, post, routes, State};
 use rocket::serde::{json::Json, Serialize, Deserialize};
 use uuid::Uuid;
+use lib::shared::log_manager;
 use namespace_manager::{directory_create, file_create, list_directory};
 
 mod namespace_manager;
@@ -58,22 +59,42 @@ struct ChunkInfo {
     content: String,
 }
 
-#[launch]
-fn rocket() -> _ {
+#[rocket::main]
+async fn main() {
+    log_manager::set_logging(&[
+        log::Level::Info,
+        log::Level::Debug,
+        log::Level::Warn,
+        log::Level::Error,
+    ]);
+
     namespace_manager::namespace_manager_init();
     chunk_manager::chunk_manager_init();
     heartbeat_manager::heartbeat_manager_init();
     /*
     *   Input  : Get (file name, chunk index) from client
     *   Output : Ret (chunk handle, chunk locations) to client
-    */
-
-    /*
     *   Get chunkserver state from chunkservers
     *   Ret Instruction to chunkservers
     */
-    rocket::build()
-        .mount("/", routes![file_read, file_write, direcotry_create, receive_heartbeat])
+    let config = rocket::Config {
+        port: 8000,
+        ..Default::default()
+    };
+
+    let app = rocket::build()
+        .configure(config)
+        .mount("/", routes![
+            create_file,
+            read_file,
+            update_file,
+            delete_file,
+            create_directory,
+            read_directory,
+            delete_directory,
+            chunkserver_heartbeat
+        ]);
+    app.launch().await.unwrap();
 }
 
 
@@ -85,17 +106,6 @@ fn rocket() -> _ {
 *       4. Delete File Entry
 *       5. Release Directory Lock
 */
-fn file_delete(){
-    
-}
-
-/*
-*   All done by namespace manager : 
-*       1. Lookup File Directory 
-*       2. Acquire Directory Lock
-*       3. Check Permissions
-*       4. Release Directory Lock
-*/
 
 fn serialize_file(file: Vec<(Uuid, String)>) -> Vec<ChunkInfo>{
     let mut chunks = Vec::new();
@@ -105,59 +115,55 @@ fn serialize_file(file: Vec<(Uuid, String)>) -> Vec<ChunkInfo>{
     chunks
 }
 
-#[get("/file_read/<file_name>/<chunk_index>")]
-async fn file_read(file_name:String, chunk_index:usize) -> Json<Vec<ChunkInfo>>{
-    // namespace_manager::file_read(file_name, chunk_index).unwrap()
-    let chunks = namespace_manager::file_read(file_name, chunk_index).unwrap();
+#[post("/file/create?<path>")]
+async fn create_file(path:String) -> Result<(), Error> {
+    let chunks = namespace_manager::file_create(path);
+    Ok(())
+}
+
+#[get("/file/read?<path>&<chunk>")]
+async fn read_file(path:String, chunk:usize) -> Json<Vec<ChunkInfo>>{
+    let chunks = namespace_manager::file_read(path, chunk).unwrap();
+    Json(serialize_file(chunks))
+    // TODO: error handling for non-existent chunk index
+}
+
+#[post("/file/update?<path>&<size>")]
+async fn update_file(path:String, size:usize) -> Json<Vec<ChunkInfo>>{
+    let chunks = namespace_manager::file_write(path, size).unwrap();
     Json(serialize_file(chunks))
 }
 
-/*
-*   All done by namespace manager : 
-*       1. Lookup File Directory 
-*       2. Acquire Directory Lock
-*       3. Check Permissions
-*       4. Release Directory Lock
-*/
-#[post("/file_write/<file_name>/<size>")]
-async fn file_write(file_name:String, size:usize) -> Json<Vec<ChunkInfo>>{
-    // namespace_manager::file_write(file_name, size).unwrap()
-    let chunks = namespace_manager::file_write(file_name, size).unwrap();
-    Json(serialize_file(chunks))
+#[get("/file/delete?<path>")]
+async fn delete_file(path:String) -> Result<(), Error> {
+    namespace_manager::file_delete(path);
+    Ok(())
 }
 
 
-/*
-*   All done by namespace manager : 
-*       1. Lookup Parent Directory 
-*       2. Acquire Parent Lock
-*       3. Check Permissions
-*       4. Create Directory
-*       5. Release Parent Lock
-*/
-#[post("/directory/<path>")]
-async fn direcotry_create(path:String) -> Result<(), Error> {
+#[post("/dir/create?<path>")]
+async fn create_directory(path:String) -> Result<(), Error> {
+    println!("{}", path);
     namespace_manager::directory_create(path);
     Ok(())
 }
 
-/*
-*   All done by namespace manager : 
-*       1. Lookup Parent Directory 
-*       2. Acquire Parent Lock
-*       3. Check Permissions
-*       4. Delete Directory
-*       5. Release Parent Lock
-*/
-fn directory_delete(){
-    
+#[get("/dir/read?<path>")]
+async fn read_directory(path:String) -> Result<(), Error> {
+    namespace_manager::list_directory(path);
+    Ok(())
+}
+
+#[post("/dir/delete?<path>")]
+async fn delete_directory(path:String) -> Result<(), Error> {
+    namespace_manager::directory_delete(path);
+    Ok(())
 }
 
 
 fn update_namespace(){
 
 }
-
 
 /*
 *   Heartbeat received from chunkservers.
@@ -166,7 +172,8 @@ fn update_namespace(){
 *   Output : Chunk Location - Send Data to Chunk
 */
 #[post("/heartbeat", format = "json", data = "<metadata>")]
-async fn receive_heartbeat(metadata: Json<heartbeat_manager::Metadata>) -> Result<(), Error> {
+async fn chunkserver_heartbeat(metadata: Json<heartbeat_manager::Metadata>) -> Result<(), Error> {
+    // debug!("{:?}", metadata);
     heartbeat_manager::receive_heartbeat(metadata);
     Ok(())
 }

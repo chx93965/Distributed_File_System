@@ -34,10 +34,5 @@ pub fn heartbeat_manager_init() {
 
 pub async fn receive_heartbeat(metadata: Json<Metadata>) {
     let mut metadata = metadata.into_inner();
-    let now = SystemTime::now()
-        .duration_since(SystemTime::UNIX_EPOCH)
-        .unwrap()
-        .as_secs();
-    metadata.last_heartbeat = now;
     SERVER_STATUS_MAP.insert(metadata.chunkserver_id, metadata);
 }

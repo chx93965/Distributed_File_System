@@ -22,8 +22,8 @@ extern crate rocket;
 
 const CHUNKS_DIR: &str = "chunks";
 const CHUNK_SIZE_MAX: usize = 1024 * 1024 * 256; // 256 MB
-const START_PORT: u16 = 8000;
-const MAX_PORT: u16 = 8100;
+const START_PORT: u16 = 8100;
+const MAX_PORT: u16 = 8200;
 
 type SharedChunkManager = Arc<Mutex<chunk_manager::ChunkManager>>;
 
