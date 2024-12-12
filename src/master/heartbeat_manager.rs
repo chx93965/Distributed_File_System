@@ -21,10 +21,9 @@ use std::time::Duration;
 use sysinfo::{Disks, System};
 use reqwest::{Error, Client};
 use rocket::serde::json::Json;
-pub use heartbeat::{Disk, Metadata, HEARTBEAT_INTERVAL};
+pub use lib::shared::master_chunk_utils::{Disk, Metadata, HEARTBEAT_INTERVAL};
 
-#[path = "../shared/heartbeat.rs"]
-mod heartbeat;
+#[path = "../shared/master_chunk_utils"]
 
 static SERVER_STATUS_MAP: SafeMap<u32, Metadata> = SafeMap::new();
 

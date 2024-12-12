@@ -3,9 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::{path::Path, time::SystemTime};
 use sysinfo::{Disks, System};
 use reqwest::{Error, Client};
-use heartbeat::{Disk, Metadata, HEARTBEAT_INTERVAL};
-
-#[path = "../shared/heartbeat.rs"] mod heartbeat;
+use lib::shared::master_chunk_utils::{Disk, Metadata, HEARTBEAT_INTERVAL};
 
 
 ///
@@ -22,13 +20,6 @@ pub async fn heartbeat() {
 
     // Select the disk mounted at `/`
     let mut disks = Disks::new_with_refreshed_list();
-    // let mut selected_disk = None;
-    // for disk in disks.list_mut() {
-    //     if disk.mount_point() == Path::new("/") {
-    //         selected_disk = Some(disk);
-    //         break;
-    //     }
-    // }
     let mut selected_disk = disks.iter()
         .find(|disk| disk.mount_point() == Path::new("/")
             || disk.mount_point() == Path::new("C:\\"));

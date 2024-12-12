@@ -8,8 +8,10 @@ use std::io::Error;
 use rocket::{get, post, routes, State};
 use rocket::serde::{json::Json, Serialize, Deserialize};
 use uuid::Uuid;
-use lib::shared::log_manager;
-use namespace_manager::{directory_create, file_create, list_directory};
+use lib::shared::{log_manager, master_client_utils::ChunkInfo};
+use lib::shared::master_client_utils::{DirectoryInfo, FileInfo};
+use namespace_manager::{directory_create, directory_delete, list_directory,
+                        file_create, file_read, file_write, file_delete};
 
 mod namespace_manager;
 mod chunk_manager;
@@ -53,11 +55,6 @@ mod heartbeat_manager;
 *
 */
 
-#[derive(Serialize, Deserialize)]
-struct ChunkInfo {
-    uuid: String,
-    content: String,
-}
 
 #[rocket::main]
 async fn main() {
@@ -107,56 +104,52 @@ async fn main() {
 *       5. Release Directory Lock
 */
 
-fn serialize_file(file: Vec<(Uuid, String)>) -> Vec<ChunkInfo>{
-    let mut chunks = Vec::new();
-    for (uuid, content) in file{
-        chunks.push(ChunkInfo{uuid: uuid.to_string(), content: content});
-    }
-    chunks
-}
 
 #[post("/file/create?<path>")]
-async fn create_file(path:String) -> Result<(), Error> {
-    let chunks = namespace_manager::file_create(path);
-    Ok(())
+async fn create_file(path:String) -> Result<Json<FileInfo>, Error> {
+    match file_create(path) {
+        Ok(file) => Ok(Json(file)),
+        Err(e) => Err(e)
+    }
 }
 
 #[get("/file/read?<path>&<chunk>")]
 async fn read_file(path:String, chunk:usize) -> Json<Vec<ChunkInfo>>{
-    let chunks = namespace_manager::file_read(path, chunk).unwrap();
-    Json(serialize_file(chunks))
+    let chunks = file_read(path, chunk).unwrap();
+    Json(ChunkInfo::serialize(chunks))
     // TODO: error handling for non-existent chunk index
 }
 
 #[post("/file/update?<path>&<size>")]
 async fn update_file(path:String, size:usize) -> Json<Vec<ChunkInfo>>{
-    let chunks = namespace_manager::file_write(path, size).unwrap();
-    Json(serialize_file(chunks))
+    let chunks = file_write(path, size).unwrap();
+    Json(ChunkInfo::serialize(chunks))
 }
 
 #[get("/file/delete?<path>")]
 async fn delete_file(path:String) -> Result<(), Error> {
-    namespace_manager::file_delete(path);
+    file_delete(path);
     Ok(())
 }
 
-
 #[post("/dir/create?<path>")]
-async fn create_directory(path:String) -> Result<(), Error> {
+async fn create_directory(path:String) -> Result<String, Error> {
     println!("{}", path);
-    namespace_manager::directory_create(path);
-    Ok(())
+    let result = directory_create(path);
+    Ok(result)
 }
 
 #[get("/dir/read?<path>")]
-async fn read_directory(path:String) -> Result<(), Error> {
-    namespace_manager::list_directory(path);
-    Ok(())
+async fn read_directory(path:String) -> Result<Json<DirectoryInfo>, Error> {
+    match list_directory(path) {
+        Ok(dir) => Ok(Json(dir)),
+        Err(e) => Err(e)
+    }
 }
 
 #[post("/dir/delete?<path>")]
 async fn delete_directory(path:String) -> Result<(), Error> {
-    namespace_manager::directory_delete(path);
+    directory_delete(path);
     Ok(())
 }
 

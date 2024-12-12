@@ -1,81 +1,73 @@
-use crate::chunk_server_client::ChunkServerClient;
+use lib::shared::log_manager;
 use clap::Parser;
-mod chunk_server_client;
+use master_client::MasterClient;
+
+mod chunk_client;
 mod master_client;
 
 #[derive(Parser, Debug)]
-#[command(name = "url")]
+#[command(name = "client", about = "CRUD operations on files/directories")]
 struct Opt {
-    /// master or chunkserver
     #[arg(short, long)]
     target: String,
-    /// chunk ID
+
     #[arg(short, long)]
-    id: u16,
-    /// operation to perform
+    action: String,
+
     #[arg(short, long)]
-    action: String
+    data: Option<String>,
 }
 
 enum Target {
-    Master,
-    ChunkServer
+    Directory,
+    File,
 }
 
 enum Action {
-    Contact,
-    AddChunk,
-    AppendChunk,
-    GetChunk,
-    GetChunkList
+    Create,
+    Read,
+    Update,
+    Delete,
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    log_manager::set_logging(&[
+        log::Level::Info,
+        log::Level::Debug,
+        log::Level::Warn,
+        log::Level::Error,
+    ]);
+
+    // Parse command line arguments
     let opt = Opt::parse();
     let target = match opt.target.as_str() {
-        "master" => Target::Master,
-        "chunkserver" => Target::ChunkServer,
-        _ => panic!("Invalid target")
+        "directory" => Target::Directory,
+        "dir" => Target::Directory,
+        "d" => Target::Directory,
+        "file" => Target::File,
+        "f" => Target::File,
+        _ => {
+            panic!("Invalid target");
+        }
     };
+
     let action = match opt.action.as_str() {
-        "contact" => Action::Contact,
-        "add_chunk" => Action::AddChunk,
-        "append_chunk" => Action::AppendChunk,
-        "get_chunk" => Action::GetChunk,
-        "get_chunk_list" => Action::GetChunkList,
-        _ => panic!("Invalid action")
+        "create" => Action::Create,
+        "c" => Action::Create,
+        "read" => Action::Read,
+        "r" => Action::Read,
+        "update" => Action::Update,
+        "u" => Action::Update,
+        "delete" => Action::Delete,
+        "d" => Action::Delete,
+        _ => {
+            panic!("Invalid action");
+        }
     };
-    match target {
-        Target::Master => {
-            let _master_client = master_client::MasterClient::new("http://localhost:8080");
-        }
-        Target::ChunkServer => {
-            let chunk_server_client = ChunkServerClient::new("http://localhost:8081");
-            match action {
-                Action::Contact => {
-                    let response = chunk_server_client.contact().await?;
-                    println!("{}", response);
-                }
-                Action::AddChunk => {
-                    let data = vec![0, 1, 2, 3, 4, 5];
-                    chunk_server_client.add_chunk(&opt.id.to_string(), &data).await?;
-                }
-                Action::AppendChunk => {
-                    let data = vec![6, 7, 8, 9, 10];
-                    chunk_server_client.append_chunk(&opt.id.to_string(), &data).await?;
-                }
-                Action::GetChunk => {
-                    let response = chunk_server_client.get_chunk(&opt.id.to_string()).await?;
-                    println!("{:?}", response);
-                }
-                Action::GetChunkList => {
-                    let response = chunk_server_client.get_chunk_list().await?;
-                    println!("{:?}", response);
-                }
-            }
-        }
-    }
+
+    let data = opt.data.unwrap_or_default();
+
 
     Ok(())
 }
