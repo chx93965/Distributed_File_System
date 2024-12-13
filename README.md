@@ -1,15 +1,13 @@
-## Build cluster
+## Build Distributed File System cluster
+```bash 
+cargo build --release 
+```
+## Launch the cluster from the root directory
 ```bash
-docker compose build
+$launch_dfs.sh <number_of_nodes>
+```
+## Run the client from the root directory
+```bash
+./target/release/client
 ```
 
-## Start cluster
-```bash
-docker compose up -d
-```
-```bash
-docker compose scale chunkserver=3
-```
-```bash
-docker compose up --scale chunkserver=3
-```
