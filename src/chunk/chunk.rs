@@ -43,8 +43,7 @@ async fn main() {
         CHUNKS_DIR.to_string(),
     )));
 
-    // Start the heartbeat manager in the background
-    tokio::spawn(heartbeat_manager::heartbeat());
+  
 
     // Try to find an available port
     let port = find_available_port(START_PORT, MAX_PORT);
@@ -59,6 +58,12 @@ async fn main() {
         port: port.unwrap(),
         ..Default::default()
     };
+
+    // Start the heartbeat manager in the background
+    // pass port number to heartbeat manager
+    tokio::spawn(heartbeat_manager::heartbeat(port.unwrap()));
+    
+    info!("Starting Chunk Server on port: {}", port.unwrap());
     
     let app = rocket::build()
         .configure(config)

@@ -11,7 +11,7 @@ use lib::shared::master_chunk_utils::{Disk, Metadata, HEARTBEAT_INTERVAL};
 /// The heartbeat contains information about the chunkserver.
 /// The heartbeat interval is defined by `HEARTBEAT_INTERVAL`.
 ///
-pub async fn heartbeat() {
+pub async fn heartbeat(port: u16) {
     info!("Starting Chunkserver heartbeat...");
     let interval = Duration::from_secs(HEARTBEAT_INTERVAL);
 
@@ -32,7 +32,7 @@ pub async fn heartbeat() {
         os_name: System::name().unwrap_or_else(|| "Unknown".to_string()),
         os_version: System::os_version().unwrap_or_else(|| "Unknown".to_string()),
         host_name: System::host_name().unwrap_or_else(|| "Unknown".to_string()),
-        chunkserver_id: 1,
+        chunkserver_id: port,
         last_heartbeat: 0,
         disk_info: Disk {
             name: selected_disk

@@ -25,7 +25,7 @@ pub use lib::shared::master_chunk_utils::{Disk, Metadata, HEARTBEAT_INTERVAL};
 
 #[path = "../shared/master_chunk_utils"]
 
-static SERVER_STATUS_MAP: SafeMap<u32, Metadata> = SafeMap::new();
+static SERVER_STATUS_MAP: SafeMap<u16, Metadata> = SafeMap::new();
 
 pub fn heartbeat_manager_init() {
     SERVER_STATUS_MAP.init();

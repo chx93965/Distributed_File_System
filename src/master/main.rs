@@ -5,6 +5,7 @@
 #[macro_use]
 extern crate rocket;
 use std::io::Error;
+use log::warn;
 use rocket::{get, post, routes, State};
 use rocket::serde::{json::Json, Serialize, Deserialize};
 use uuid::Uuid;
@@ -59,8 +60,8 @@ mod heartbeat_manager;
 #[rocket::main]
 async fn main() {
     log_manager::set_logging(&[
-        log::Level::Info,
-        log::Level::Debug,
+        //log::Level::Info,
+        //log::Level::Debug,
         log::Level::Warn,
         log::Level::Error,
     ]);
@@ -167,6 +168,9 @@ fn update_namespace(){
 #[post("/heartbeat", format = "json", data = "<metadata>")]
 async fn chunkserver_heartbeat(metadata: Json<heartbeat_manager::Metadata>) -> Result<(), Error> {
     // debug!("{:?}", metadata);
+    // received chunkser from port address
+    warn!("Received heartbeat from chunkserver id: {}", metadata.chunkserver_id);
     heartbeat_manager::receive_heartbeat(metadata);
+    // print received heartbeat from chunkserver id 
     Ok(())
 }
