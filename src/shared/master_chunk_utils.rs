@@ -2,7 +2,7 @@ use rocket::serde::{Deserialize, Serialize};
 
 pub const HEARTBEAT_INTERVAL: u64 = 2;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Disk {
     pub name: String,
     pub kind: String,
@@ -12,7 +12,7 @@ pub struct Disk {
     pub available_space: u64,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Metadata {
     pub os_name: String,
     pub os_version: String,
