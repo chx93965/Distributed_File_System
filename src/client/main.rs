@@ -1,9 +1,11 @@
-use lib::shared::log_manager;
+use std::path::Path;
 use clap::Parser;
 use master_client::MasterClient;
 
 mod chunk_client;
 mod master_client;
+
+const MASTER_URL: &str = "http://localhost:8000";
 
 #[derive(Parser, Debug)]
 #[command(name = "client", about = "CRUD operations on files/directories")]
@@ -15,14 +17,16 @@ struct Opt {
     action: String,
 
     #[arg(short, long)]
-    data: Option<String>,
+    path: Option<String>,
 }
 
+#[derive(Debug)]
 enum Target {
     Directory,
     File,
 }
 
+#[derive(Debug)]
 enum Action {
     Create,
     Read,
@@ -32,13 +36,6 @@ enum Action {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    log_manager::set_logging(&[
-        log::Level::Info,
-        log::Level::Debug,
-        log::Level::Warn,
-        log::Level::Error,
-    ]);
-
     // Parse command line arguments
     let opt = Opt::parse();
     let target = match opt.target.as_str() {
@@ -66,8 +63,50 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
-    let data = opt.data.unwrap_or_default();
+    let path = opt.path.unwrap_or_default();
+    let path = Path::new(&path).to_str().unwrap_or_default();
+    // println!("Target: {:?}, Action: {:?}, Data: {}", target, action, path);
 
+    let client = MasterClient::new(MASTER_URL);
+    match target {
+        Target::Directory => {
+            match action {
+                Action::Create => {
+                    let result = client.create_directory(path).await?;
+                    println!("{}", result);
+                }
+                Action::Read => {
+                    let result = client.read_directory(path).await?;
+                    println!("{:?}", result);
+                }
+                Action::Delete => {
+                    // let result = client.delete_directory(path).await?;
+                    // println!("{}", result);
+                }
+                _ => {}
+            }
+        }
+        Target::File => {
+            match action {
+                Action::Create => {
+                    let result = client.create_file(path).await?;
+                    println!("{:?}", result);
+                }
+                Action::Read => {
+                    let result = client.read_file(path).await?;
+                    println!("{:?}", result);
+                }
+                Action::Update => {
+                    let result = client.update_file(path, 0).await?;
+                    println!("{:?}", result);
+                }
+                Action::Delete => {
+                    // let result = client.delete_file(path).await?;
+                    // println!("{}", result);
+                }
+            }
+        }
+    }
 
     Ok(())
 }

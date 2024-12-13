@@ -18,7 +18,7 @@ impl MasterClient {
     }
 
     pub async fn create_file(&self, path: &str) -> Result<FileInfo, std::io::Error> {
-        let url = format!("{}/file/create?path={}", self.base_url, path);
+        let url = format!("{}/file/create?path=/{}", self.base_url, path);
         let response = self.client.post(&url).send().await.expect("Request failed");
         if response.status().is_success() {
             let result = response.json::<FileInfo>().await.expect("Failed to parse response");
@@ -29,7 +29,7 @@ impl MasterClient {
     }
 
     pub async fn read_file(&self, path: &str) -> Result<Vec<ChunkInfo>, Error> {
-        let url = format!("{}/file/read?path={}", self.base_url, path);
+        let url = format!("{}/file/read?path=/{}", self.base_url, path);
         let response = self.client.get(&url).send().await.expect("Request failed");
         if response.status().is_success() {
             let result = response.json::<Vec<ChunkInfo>>().await.expect("Failed to parse response");
@@ -40,7 +40,7 @@ impl MasterClient {
     }
 
     pub async fn update_file(&self, path: &str, size: usize) -> Result<Vec<ChunkInfo>, Error> {
-        let url = format!("{}/file/update?path={}&size={}", self.base_url, path, size);
+        let url = format!("{}/file/update?path=/{}&size={}", self.base_url, path, size);
         let response = self.client.post(&url).send().await.expect("Request failed");
         if response.status().is_success() {
             let result = response.json::<Vec<ChunkInfo>>().await.expect("Failed to parse response");
@@ -51,7 +51,8 @@ impl MasterClient {
     }
 
     pub async fn create_directory(&self, path: &str) -> Result<String, Error> {
-        let url = format!("{}/dir/create?path={}", self.base_url, path);
+        let url = format!("{}/dir/create?path=/{}", self.base_url, path);
+        println!("{}", url);
         let response = self.client.post(&url).send().await.expect("Request failed");
         if response.status().is_success() {
             let result = response.text().await.expect("Failed to parse response");
@@ -62,7 +63,7 @@ impl MasterClient {
     }
 
     pub async fn read_directory(&self, path: &str) -> Result<DirectoryInfo, Error> {
-        let url = format!("{}/dir/read?path={}", self.base_url, path);
+        let url = format!("{}/dir/read?path=/{}", self.base_url, path);
         let response = self.client.get(&url).send().await.expect("Request failed");
         if response.status().is_success() {
             let result = response.json::<DirectoryInfo>().await.expect("Failed to parse response");
