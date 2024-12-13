@@ -6,14 +6,14 @@ use uuid::Uuid;
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ChunkInfo {
     pub uuid: String,
-    pub key: String,
+    pub server_ip: String,
 }
 
 impl ChunkInfo {
     pub fn serialize(file: Vec<(Uuid, String)>) -> Vec<ChunkInfo> {
         let mut chunks = Vec::new();
-        for (uuid, key) in file{
-            chunks.push(ChunkInfo{uuid: uuid.to_string(), key });
+        for (uuid, ip) in file{
+            chunks.push(ChunkInfo{uuid: uuid.to_string(), server_ip: ip });
         }
         chunks
     }
