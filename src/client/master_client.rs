@@ -8,7 +8,6 @@ pub struct MasterClient {
     client: Client,
 }
 
-
 impl MasterClient {
     pub fn new(base_url: &str) -> Self {
         MasterClient {
@@ -17,7 +16,7 @@ impl MasterClient {
         }
     }
 
-    pub async fn create_file(&self, path: &str) -> Result<FileInfo, std::io::Error> {
+    pub async fn create_file(&self, path: &str) -> Result<FileInfo, Error> {
         let url = format!("{}/file/create?path=/{}", self.base_url, path);
         let response = self.client.post(&url).send().await.expect("Request failed");
         if response.status().is_success() {
