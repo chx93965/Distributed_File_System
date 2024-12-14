@@ -1,6 +1,6 @@
 use reqwest::Client;
 use std::io::Error;
-use lib::shared::master_client_utils::{ChunkInfo, DirectoryInfo, FileInfo};
+use lib::shared::master_client_utils::{ChunkInfo, DirectoryInfo, FileInfo, User};
 
 pub struct MasterClient {
     base_url: String,
@@ -12,6 +12,26 @@ impl MasterClient {
         MasterClient {
             base_url: base_url.to_string(),
             client: Client::new(),
+        }
+    }
+
+    pub async fn user_authenticate(&self, user:&User) -> Result<String, Error> {
+        // register if user does not exist
+        let url = format!("{}/user/register", self.base_url);
+        let response = self.client.post(&url).json(user).send().await.expect("Request failed");
+        if response.status().is_success() {
+            let result = response.text().await.expect("Failed to parse response");
+            Ok(result)
+        } else {
+            // login if user exists
+            let url = format!("{}/user/login", self.base_url);
+            let response = self.client.post(&url).json(user).send().await.expect("Request failed");
+            if response.status().is_success() {
+                let result = response.text().await.expect("Failed to parse response");
+                Ok(result)
+            } else {
+                Err(Error::new(std::io::ErrorKind::Other, String::from("Failed to authenticate user")))
+            }
         }
     }
 

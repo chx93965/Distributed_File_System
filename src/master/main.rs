@@ -4,13 +4,19 @@
 #![allow(unused)]
 #[macro_use]
 extern crate rocket;
+
+use std::collections::HashMap;
 use std::io::Error;
 use log::warn;
 use rocket::{get, post, routes, State};
+use rocket::futures::StreamExt;
 use rocket::serde::{json::Json, Serialize, Deserialize};
+use rocket::tokio::fs::OpenOptions;
+use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+use tokio::sync::RwLock;
 use uuid::Uuid;
 use lib::shared::{log_manager, master_client_utils::ChunkInfo};
-use lib::shared::master_client_utils::{DirectoryInfo, FileInfo};
+use lib::shared::master_client_utils::{DirectoryInfo, FileInfo, User};
 use namespace_manager::{directory_create, directory_delete, list_directory,
                         file_create, file_read, file_write, file_delete};
 
@@ -18,6 +24,44 @@ mod namespace_manager;
 mod chunk_manager;
 mod safe_map;
 mod heartbeat_manager;
+
+const USER_INFO: &str = "users.json";
+
+struct UserDatabase {
+    users: RwLock<HashMap<String, String>>,
+}
+
+impl UserDatabase {
+    async fn new() -> Self {
+        let users = RwLock::new(HashMap::new());
+
+        let file = OpenOptions::new()
+            .read(true).write(true).create(true)
+            .open(USER_INFO).await.unwrap();
+
+        let reader = BufReader::new(file);
+        let mut lines = reader.lines();
+
+        while let Some(line_result) = lines.next_line().await.unwrap() {
+            let user: User = serde_json::from_str(&line_result).unwrap();
+            users.write().await.insert(
+                user.username.clone(),
+                user.password.clone());
+        }
+        Self { users }
+    }
+
+    async fn save(&self, user: User) -> Result<(), Error> {
+        let mut file = OpenOptions::new()
+            .append(true).create(true)
+            .open(USER_INFO).await.unwrap();
+
+        let data = serde_json::to_string(&user)?;
+        file.write_all(data.as_bytes()).await?;
+        file.write_all(b"\n").await?;
+        Ok(())
+    }
+}
 
 /*
 *   Maintains filesystem's metadata in memory :
@@ -69,6 +113,8 @@ async fn main() {
     namespace_manager::namespace_manager_init();
     chunk_manager::chunk_manager_init();
     heartbeat_manager::heartbeat_manager_init();
+
+    let user_db = UserDatabase::new().await;
     /*
     *   Input  : Get (file name, chunk index) from client
     *   Output : Ret (chunk handle, chunk locations) to client
@@ -82,7 +128,10 @@ async fn main() {
 
     let app = rocket::build()
         .configure(config)
+        .manage(user_db)
         .mount("/", routes![
+            register,
+            login,
             create_file,
             read_file,
             update_file,
@@ -151,6 +200,39 @@ async fn read_directory(path:String) -> Result<Json<DirectoryInfo>, Error> {
 #[post("/dir/delete?<path>")]
 async fn delete_directory(path:String) -> Result<(), Error> {
     directory_delete(path);
+    Ok(())
+}
+
+#[post("/user/register", data = "<user>")]
+async fn register(user:Json<User>, user_db: &State<UserDatabase>) -> Result<(), Error> {
+    let user = user.into_inner();
+    let mut users_lock = user_db.users.write().await;
+
+    // check if user already exists
+    if users_lock.contains_key(&user.username) {
+        return Err(Error::new(std::io::ErrorKind::AlreadyExists, "User already exists"));
+    }
+    users_lock.insert(user.username.clone(), user.password.clone());
+
+    // write to persistent storage
+    user_db.save(user).await?;
+    Ok(())
+}
+
+#[post("/user/login", data = "<user>")]
+async fn login(user:Json<User>, user_db: &State<UserDatabase>) -> Result<(), Error> {
+    let user = user.into_inner();
+    let users_lock = user_db.users.read().await;
+
+    // check if user exists
+    if !users_lock.contains_key(&user.username) {
+        return Err(Error::new(std::io::ErrorKind::NotFound, "User not found"));
+    }
+
+    // check if password matches
+    if users_lock.get(&user.username).unwrap() != &user.password {
+        return Err(Error::new(std::io::ErrorKind::InvalidData, "Invalid password"));
+    }
     Ok(())
 }
 

@@ -4,7 +4,7 @@ use std::path::Path;
 use clap::Parser;
 use master_client::MasterClient;
 use chunk_client::ChunkClient;
-use lib::shared::master_client_utils::ChunkInfo;
+use lib::shared::master_client_utils::{ChunkInfo, User};
 
 mod chunk_client;
 mod master_client;
@@ -14,6 +14,12 @@ const MASTER_URL: &str = "http://localhost:8000";
 #[derive(Parser, Debug)]
 #[command(name = "client", about = "CRUD operations on files/directories")]
 struct Opt {
+    #[arg(short, long)]
+    username: String,
+
+    #[arg(short, long)]
+    password: String,
+
     #[arg(short, long)]
     target: String,
 
@@ -70,12 +76,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
+    let user = User {
+        username: opt.username,
+        password: opt.password,
+    };
+
     let binding = opt.local_path.unwrap_or_default();
     let local_path = binding.as_str();
     let binding = opt.remote_path.unwrap_or_default();
     let remote_path = binding.as_str();
 
     let master_client = MasterClient::new(MASTER_URL);
+    user_authenticate(&master_client, &user).await?;
+
     match target {
         Target::Directory => {
             match action {
@@ -113,6 +126,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
+    Ok(())
+}
+
+async fn user_authenticate(master_client: &MasterClient, user: &User) -> Result<(), Error> {
+    master_client.user_authenticate(user).await?;
     Ok(())
 }
 

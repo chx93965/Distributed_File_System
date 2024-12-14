@@ -58,3 +58,9 @@ pub struct DirectoryInfo {
     pub dir_metadata: Metadata,
     pub files: HashMap<String, FileInfo>
 }
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct User {
+    pub username: String,
+    pub password: String,
+}
