@@ -262,12 +262,18 @@ pub fn file_create(path: String) -> Result<FileInfo, Error>{
         drop(dir_read);
 
         let m = Metadata::new(FILE_SIZE, 0x666, "1".to_string(), "user".to_string());
-        if let file = FileNode::new(filename.to_string(), directory.to_string(), m) {
-            println!("{}", CREATED_FILE_SUCCESSFULLY);
-            return Ok(file.unwrap().serialize());
+        
+        match FileNode::new(filename.to_string(), directory.to_string(), m) {
+            Ok(file) => {
+                println!("{}", CREATED_FILE_SUCCESSFULLY);
+                Ok(file.serialize())
+            }
+            Err(e) => {
+                println!("Failed to create file: {}", filename);
+                Err(Error::new(std::io::ErrorKind::Other, "Failed to create file"))
+            }
         }
-        println!("Failed to create file: {}", filename);
-        return Err(Error::new(std::io::ErrorKind::Other, "Failed to create file"));
+        
     } else {
         println!("{}", NO_DIR_EXIST);
         return Err(Error::new(std::io::ErrorKind::Other, NO_DIR_EXIST));

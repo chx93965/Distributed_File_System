@@ -1,6 +1,5 @@
-use reqwest::{Client, StatusCode};
+use reqwest::Client;
 use std::io::Error;
-use uuid::Uuid;
 use lib::shared::master_client_utils::{ChunkInfo, DirectoryInfo, FileInfo};
 
 pub struct MasterClient {

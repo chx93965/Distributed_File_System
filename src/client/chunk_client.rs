@@ -24,6 +24,7 @@ impl ChunkClient {
         }
     }
 
+    #[allow(unused)]
     pub async fn append_chunk(&self, id: &str, data: Vec<u8>) -> Result<String, Error> {
         let url = format!("{}/append_chunk?id={}", self.base_url, id);
         let response = self.client.post(&url).body(data).send()
@@ -46,6 +47,7 @@ impl ChunkClient {
         }
     }
 
+    #[allow(unused)]
     pub async fn get_chunk_list(&self) -> Result<Vec<String>, Error> {
         let url = format!("{}/get_chunk_list", self.base_url);
         let response = self.client.get(&url).send().await.expect("Request failed");

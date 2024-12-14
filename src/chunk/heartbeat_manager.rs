@@ -1,8 +1,7 @@
 use rocket::tokio::time::{sleep, Duration};
-use serde::{Deserialize, Serialize};
 use std::{path::Path, time::SystemTime};
 use sysinfo::{Disks, System};
-use reqwest::{Error, Client};
+use reqwest::Client;
 use lib::shared::master_chunk_utils::{Disk, Metadata, HEARTBEAT_INTERVAL};
 
 
@@ -93,7 +92,7 @@ pub async fn heartbeat(port: u16) {
             .as_secs();
         debug!("Sending heartbeat...");
 
-        let response = match Client::new()
+        let _response = match Client::new()
             .post("http://localhost:8000/heartbeat")
             .json(&metadata)
             .send()

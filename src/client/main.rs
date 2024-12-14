@@ -123,7 +123,7 @@ async fn create_file(master_client: &MasterClient, local_path: &str, remote_path
     let size = file.len();
 
     // Create remote file on master
-    let result = master_client.create_file(remote_path).await?;
+    let _result = master_client.create_file(remote_path).await?;
     // println!("{:?}", result);
 
     // Signal master with file size
@@ -132,7 +132,7 @@ async fn create_file(master_client: &MasterClient, local_path: &str, remote_path
     // Write to chunks
     for chunk in result.iter() {
         let chunk_client = ChunkClient::new(&chunk.server_ip.as_str());
-        let result = chunk_client.add_chunk(&chunk.uuid, file.clone()).await.unwrap();
+        let _result = chunk_client.add_chunk(&chunk.uuid, file.clone()).await.unwrap();
         // println!("{}", result);
     }
 
@@ -170,7 +170,7 @@ async fn update_file(master_client: &MasterClient, source_path: &str, destinatio
 
     for chunk in result.iter() {
         let chunk_client = ChunkClient::new(&chunk.server_ip.as_str());
-        let result = chunk_client.add_chunk(&chunk.uuid, file.clone()).await.unwrap();
+        let _result = chunk_client.add_chunk(&chunk.uuid, file.clone()).await.unwrap();
         // println!("{}", result);
     }
 
