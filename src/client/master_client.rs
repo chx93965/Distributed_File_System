@@ -60,11 +60,13 @@ impl MasterClient {
         }
     }
 
-    pub async fn read_directory(&self, path: &str) -> Result<DirectoryInfo, Error> {
+    pub async fn read_directory(&self, path: &str) -> Result<String, Error> {
         let url = format!("{}/dir/read?path=/{}", self.base_url, path);
         let response = self.client.get(&url).send().await.expect("Request failed");
         if response.status().is_success() {
             let result = response.json::<DirectoryInfo>().await.expect("Failed to parse response");
+            // convert to Json string
+            let result = serde_json::to_string(&result).expect("Failed to convert to JSON string");
             Ok(result)
         } else {
             Err(Error::new(std::io::ErrorKind::Other, String::from("Failed to read directory")))

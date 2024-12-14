@@ -85,7 +85,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
                 Action::Read => {
                     let result = master_client.read_directory(remote_path).await?;
-                    println!("{:?}", result);
+                    println!("{}", result);
                 }
                 Action::Delete => {
                     // let result = client.delete_directory(path).await?;
@@ -170,7 +170,7 @@ async fn update_file(master_client: &MasterClient, source_path: &str, destinatio
 
     for chunk in result.iter() {
         let chunk_client = ChunkClient::new(&chunk.server_ip.as_str());
-        let _result = chunk_client.add_chunk(&chunk.uuid, file.clone()).await.unwrap();
+        let result = chunk_client.add_chunk(&chunk.uuid, file.clone()).await.unwrap();
         // println!("{}", result);
     }
 
