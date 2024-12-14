@@ -6,10 +6,13 @@ use chrono::DateTime;
 use crate::chunk_manager;
 use crate::chunk_manager::{get_chunks, write_chunks};
 use crate::safe_map::SafeMap;
+use std::io::Error;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::RwLock;
+use rocket::serde::json::Json;
 use uuid::Uuid;
+use lib::shared::master_client_utils::{FileInfo, DirectoryInfo, Metadata};
 
 /*
 *   A managers for all the files and directories
@@ -73,31 +76,31 @@ const CREATED_DIR_SUCCESSFULLY: &str = "Successfully created directory";
 const CREATED_FILE_SUCCESSFULLY: &str = "Successfully created file";
 const DIR_SIZE: i32 = 4000;
 const FILE_SIZE: i32 = 10000;
+// #[derive(Debug, Clone)]
+// struct Metadata {
+//     size: i32,
+//     creation_time: DateTime<Utc>,
+//     modification_time: DateTime<Utc>,
+//     permission: i32,
+//     owner: String,
+//     group: String,
+// }
+//
+// impl Metadata {
+//     pub fn new(size: i32, permission: i32, owner: String, group: String) -> Self {
+//         let utc_now: DateTime<Utc> = Utc::now();
+//         Self {
+//             size: size,
+//             creation_time: utc_now,
+//             modification_time: utc_now,
+//             permission: permission,
+//             owner: owner,
+//             group: group,
+//         }
+//     }
+// }
+
 #[derive(Debug, Clone)]
-struct Metadata {
-    size: i32,
-    creation_time: DateTime<Utc>,
-    modification_time: DateTime<Utc>,
-    permission: i32,
-    owner: String,
-    group: String,
-}
-
-impl Metadata {
-    pub fn new(size: i32, permission: i32, owner: String, group: String) -> Self {
-        let utc_now: DateTime<Utc> = Utc::now();
-        Self {
-            size: size,
-            creation_time: utc_now,
-            modification_time: utc_now,
-            permission: permission,
-            owner: owner,
-            group: group,
-        }
-    }
-}
-
-#[derive(Debug)]
 struct FileNode {
     file_name: String,
     file_parent: String,
@@ -111,7 +114,7 @@ impl FileNode {
         file_name: String,
         file_parent: String,
         file_metadata: Metadata,
-    ) -> Result<(), String> {
+    ) -> Result<Self, String> {
         let file = Self {
             file_name: file_name.clone(),
             file_parent: file_parent.clone(),
@@ -125,7 +128,8 @@ impl FileNode {
             .lock()
             .map_err(|_| "Failed to acquire lock on DIR_MAP")?;
 
-        let map = dir_map_guard.as_ref().ok_or("DIR_MAP not initialized")?;
+        let map = dir_map_guard.as_ref()
+            .ok_or("DIR_MAP not initialized")?;
 
         // Get parent dir reference before modifying anything
         let parent = map
@@ -139,8 +143,20 @@ impl FileNode {
 
         parent_write
             .files
-            .insert(file_name, Arc::new(RwLock::new(file)));
-        Ok(())
+            .insert(file_name, Arc::new(RwLock::new(file.clone())));
+
+        Ok(file)
+    }
+
+    pub fn serialize(&self) -> FileInfo {
+        FileInfo {
+            file_name: self.file_name.clone(),
+            file_parent: self.file_parent.clone(),
+            file_metadata: self.file_metadata.clone(),
+            chunks: self.chunks.clone().iter()
+                .map(|x| x.iter()
+                    .map(|uuid| uuid.to_string()).collect()).collect(),
+        }
     }
 }
 
@@ -167,6 +183,17 @@ impl DirectoryNode {
             DIR_MAP.insert(dir_name.clone(), node);
         } else {
             println!("This directory \"{}\" does not exist !!!", dir_parent);
+        }
+    }
+
+    pub fn serialize(&self) -> DirectoryInfo {
+        DirectoryInfo {
+            dir_name: self.dir_name.clone(),
+            dir_parent: self.dir_parent.clone(),
+            dir_metadata: self.dir_metadata.clone(),
+            files: self.files.iter()
+                .map(|(k, v)| (k.clone(),
+                               v.read().unwrap().serialize())).collect(),
         }
     }
 }
@@ -207,7 +234,7 @@ pub fn file_lookup(path: String) -> Result<Vec<Vec<Uuid>>, String>{
 /*
 *   Example : file_create(/foo/bar.txt)
 */
-pub fn file_create(path: String) {
+pub fn file_create(path: String) -> Result<FileInfo, Error>{
     let (directory, filename) = match path.rsplit_once('/') {
         Some((dir, name)) if dir.is_empty() => ("/", name),
         Some((dir, name)) => (dir, name),
@@ -221,26 +248,35 @@ pub fn file_create(path: String) {
             Ok(guard) => guard,
             Err(_) => {
                 println!("Failed to acquire read lock on directory");
-                return;
+                return Err(Error::new(std::io::ErrorKind::Other,
+                                      "Failed to acquire read lock on directory"));
             }
         };
 
         if dir_read.files.get(filename).is_some() {
             println!("{}", FILE_ALREADY_EXIST);
-            return;
+            return Err(Error::new(std::io::ErrorKind::Other, FILE_ALREADY_EXIST));
         }
 
         // Drop read lock before creating file
         drop(dir_read);
 
         let m = Metadata::new(FILE_SIZE, 0x666, "1".to_string(), "user".to_string());
-        if let Err(e) = FileNode::new(filename.to_string(), directory.to_string(), m) {
-            println!("Failed to create file: {}", e);
-        } else {
-            println!("{}", CREATED_FILE_SUCCESSFULLY);
+        
+        match FileNode::new(filename.to_string(), directory.to_string(), m) {
+            Ok(file) => {
+                println!("{}", CREATED_FILE_SUCCESSFULLY);
+                Ok(file.serialize())
+            }
+            Err(e) => {
+                println!("Failed to create file: {}", filename);
+                Err(Error::new(std::io::ErrorKind::Other, "Failed to create file"))
+            }
         }
+        
     } else {
         println!("{}", NO_DIR_EXIST);
+        return Err(Error::new(std::io::ErrorKind::Other, NO_DIR_EXIST));
     }
 }
 
@@ -289,7 +325,7 @@ pub fn file_write(path: String, size: usize) -> Result<Vec<(Uuid,String)>, Strin
     Ok(chunks)
 }
 
-pub fn file_read(path: String, chunk_index: usize) -> Result<Vec<(Uuid, String)>, String>{
+pub fn file_read(path: String, chunk_index: usize) -> Result<Vec<(Uuid, String)>, String> {
     let chunks = file_lookup(path)?;
     let tuples = get_chunks(chunks[chunk_index].clone());
     Ok(tuples)
@@ -298,21 +334,25 @@ pub fn file_read(path: String, chunk_index: usize) -> Result<Vec<(Uuid, String)>
 ////////////////////////////////////////////////////
 /// Directory Operations
 
-pub fn list_directory(path: String) {
+pub fn list_directory(path: String) -> Result<DirectoryInfo, Error> {
     if let Some(dir) = DIR_MAP.get(&path) {
         println!("------------------------------------------");
+        // let directory_files = dir.read().unwrap().files.clone();
         println!("{:?}", dir.read().unwrap().files);
+        Ok(dir.read().unwrap().serialize())
     } else {
         println!("{}", NO_DIR_EXIST);
+        Err(Error::new(std::io::ErrorKind::Other, NO_DIR_EXIST))
     }
 }
 
-pub fn directory_create(path: String) {
+pub fn directory_create(path: String) -> String {
     /*
      *   Call logger and wait to log operation
      */
     if let Some(new_dir) = DIR_MAP.get(&path) {
         println!("{}", DIR_ALREADY_EXIST);
+        DIR_ALREADY_EXIST.to_string()
     } else {
         let (parent_dir, dir) = match path.rsplit_once('/') {
             Some((dir, name)) if dir.is_empty() => ("/", name),
@@ -324,11 +364,14 @@ pub fn directory_create(path: String) {
              *      This metadata should be given by the client but until then
              *      add a dummy metadata
              */
-            let m = Metadata::new(FILE_SIZE, 0x666, "1".to_string(), "user".to_string());
+            let m = Metadata::new(
+                FILE_SIZE, 0x666, "1".to_string(), "user".to_string());
             DirectoryNode::new(path, m, parent.read().unwrap().dir_name.to_string());
             println!("{}", CREATED_DIR_SUCCESSFULLY);
+            CREATED_DIR_SUCCESSFULLY.to_string()
         } else {
             println!("{} : {}", NO_DIR_EXIST, parent_dir);
+            NO_DIR_EXIST.to_string()
         }
     }
 }
