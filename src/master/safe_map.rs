@@ -41,6 +41,15 @@ where
         guard.as_ref().and_then(|map| map.get(key).cloned())
     }
 
+    pub fn remove(&self, key: &A) -> Option<Arc<RwLock<T>>> {
+        let mut guard = self.inner.lock().unwrap();
+        if let Some(map) = guard.as_mut() {
+            map.remove(key)
+        } else {
+            None
+        }
+    }
+
     /// Returns a vector containing all keys in the map.
     /// The keys will be cloned since we don't want to transfer ownership out of the map.
     pub fn keys(&self) -> Vec<A> 
@@ -50,6 +59,18 @@ where
         let guard = self.inner.lock().unwrap();
         guard.as_ref()
             .map(|map| map.keys().cloned().collect())
+            .unwrap_or_default()
+    }
+
+    pub fn to_map(&self) -> HashMap<A, T>
+    where
+        A: Clone,
+        T: Clone
+    {
+        let guard = self.inner.lock().unwrap();
+        guard.as_ref()
+            .map(|inner_map| inner_map.iter()
+                .map(|(k, v)| (k.clone(), v.read().unwrap().clone())).collect())
             .unwrap_or_default()
     }
 }

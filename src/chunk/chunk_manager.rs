@@ -44,7 +44,7 @@ impl Chunks {
     pub fn delete_chunk(&mut self, id: Uuid) {
         let chunk = self.find_chunk(id);
         match chunk {
-            Some(chunk) => {
+            Some(_chunk) => {
                 let chunk_path = Path::new(&self.chunks_dir).join(id.to_string());
                 std::fs::remove_file(&chunk_path).unwrap();
                 self.chunks.retain(|c| c.id != id);

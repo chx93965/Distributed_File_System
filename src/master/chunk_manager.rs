@@ -23,6 +23,8 @@ use crate::safe_map::SafeMap;
 use chrono::{DateTime, Utc};
 use rand::prelude::*;
 use rand::seq::SliceRandom;
+use tokio::fs::OpenOptions;
+use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use uuid::Uuid;
 
 static CHUNK_MAP: SafeMap<Uuid, String> = SafeMap::new();
@@ -43,14 +45,10 @@ static SERVER_MAP: SafeMap<String, Vec<Uuid>> = SafeMap::new();
 // }
 
 pub fn chunk_manager_init() {
-    /*
-     *      Do initialization
-     */
-
     SERVER_MAP.init();
     CHUNK_MAP.init();
-
-
+    load_chunk_map();
+    load_server_map();
     /*
      *  Some dummy servers init
      */
@@ -59,6 +57,70 @@ pub fn chunk_manager_init() {
     // SERVER_MAP.insert("host2".to_string(), Vec::new());
     // SERVER_MAP.insert("host3".to_string(), Vec::new());
     // SERVER_MAP.insert("host4".to_string(), Vec::new());
+}
+
+// TODO: pass CHUNK_FILE from main
+pub async fn save_chunk_map() {
+    let mut file = OpenOptions::new()
+        .write(true).create(true)
+        .open("chunk.json").await.unwrap();
+
+    for (uuid, id) in CHUNK_MAP.to_map().iter() {
+        file.write_all(format!("{},{}\n", uuid.to_string(), id)
+            .as_bytes()).await.unwrap();
+    }
+}
+
+pub async fn load_chunk_map() {
+    let mut file = OpenOptions::new()
+        .read(true).create(true)
+        .open("chunk.json").await.unwrap();
+
+    let reader = BufReader::new(file);
+    let mut lines = reader.lines();
+
+    while let Some(line_result) = lines.next_line().await.unwrap() {
+        // stores as <uuid>,<string> at each line
+        let mut parts = line_result.split(",");
+        let uuid = Uuid::parse_str(parts.next().unwrap()).unwrap();
+        CHUNK_MAP.insert(uuid, parts.next().unwrap().to_string());
+    }
+}
+
+// TODO: pass SERVER_FILE from main
+pub async fn save_server_map() {
+    let mut file = OpenOptions::new()
+        .write(true).create(true)
+        .open("server.json").await.unwrap();
+
+    for (server, uuids) in SERVER_MAP.to_map().iter() {
+        let mut line = format!("{},", server);
+        uuids.iter().for_each(|uuid| {
+            line.push_str(&uuid.to_string());
+            line.push(',');
+        });
+        file.write_all(line.as_bytes()).await.unwrap();
+    }
+}
+
+pub async fn load_server_map() {
+    let mut file = OpenOptions::new()
+        .read(true).create(true)
+        .open("server.json").await.unwrap();
+
+    let reader = BufReader::new(file);
+    let mut lines = reader.lines();
+
+    while let Some(line_result) = lines.next_line().await.unwrap() {
+        // stores as <string>,<uuid>,<uuid>,... at each line
+        let mut parts = line_result.split(",");
+        let server = parts.next().unwrap().to_string();
+        let mut uuids = Vec::new();
+        for part in parts {
+            uuids.push(Uuid::parse_str(part).unwrap());
+        }
+        SERVER_MAP.insert(server, uuids);
+    }
 }
 
 /*
@@ -98,7 +160,8 @@ pub fn write_chunks(_size: usize) -> Vec<(Uuid, String)> {
         CHUNK_MAP.insert(thing.0, thing.1);
     }
 
-    
+    save_chunk_map();
+    save_server_map();
 
     /*
      *  TODO : Send the update to the actual chunkservers
