@@ -15,8 +15,8 @@
 - [Proposals](./PROPOSAL.md)
 - [Introduction](#introduction)
 - [Architecture](#architecture)
-- [Rest API](#rest-api)
 - [How-to use](#how-to-use)
+- [Rest API](#rest-api)
 - [References](#references)
 
 ## Introduction
@@ -39,204 +39,203 @@ Our DFS is inspired by the Google File System (GFS) architecture, which is a dis
 
 1\. **Master Server**: The master server is responsible for managing the metadata of the file system, such as file locations, access permissions, and replication policies. It keeps track of the file system's state and coordinates operations across multiple servers.
 
-2\. **Chunk Servers**: The chunk servers store the actual data in the form of fixed-size chunks. Each chunk is replicated across multiple chunk servers to ensure data availability and reliability. The chunk servers are responsible for storing, replicating, and serving data to clients. *note: Chunk replication is still in progress*
+2\. **Chunk Servers**: The chunk servers store the actual data in the form of fixed-size chunks. Each chunk is replicated across multiple chunk servers to ensure data availability and reliability. The chunk servers are responsible for storing, replicating, and serving data to clients. *(in progress)*
 
 3\. **Client**: The client interacts with the master server to perform file operations such as reading, writing, and deleting files. The client communicates with the chunk servers to read and write data chunks.
+
+The code structure for above binaries is shown below:
+```bash
+├── launch_dfs.sh
+├── Metadata_Example
+├── PROPOSAL.md
+├── README.md
+└── src
+    ├── chunk
+    │   ├── chunk_manager.rs
+    │   ├── chunk.rs
+    │   └── heartbeat_manager.rs
+    ├── client
+    │   ├── chunk_client.rs
+    │   ├── main.rs
+    │   └── master_client.rs
+    ├── lib.rs
+    ├── master
+    │   ├── chunk_manager.rs
+    │   ├── heartbeat_manager.rs
+    │   ├── log_manager.rs
+    │   ├── main.rs
+    │   ├── namespace_manager.rs
+    │   └── safe_map.rs
+    └── shared
+        ├── log_manager.rs
+        ├── master_chunk_utils.rs
+        ├── master_client_utils.rs
+        └── mod.rs
+```
 
 The core features of the DFS include:
 
 1\. **File Operations**: The DFS supports basic file operations such as creating, reading, writing, and deleting files. Clients can interact with the file system using a REST API.
 
+2\. **Chunk Management**: The DFS stores data in fixed-size chunks and replicates them across multiple chunk servers to ensure data availability and reliability.
+
+3\. **Fault Tolerance**: The DFS is designed to handle server failures gracefully by replicating data across multiple servers and maintaining multiple copies of each chunk. *(in progress)*
+
+---
+## How-to use
+### Build the project using "release" configuration
+```bash 
+cargo build --release 
+```
+### Launch the cluster from the root directory
+```bash
+launch_dfs.sh <number_of_nodes>
+```
+### Client Operations
+Once the cluster is up and running, you can interact with the DFS using the client application. The client application provides a command-line interface to perform various operations on the DFS. You can run the client application using the following command:
+#### Create a file
+```bash
+./target/release/client --target file --action create --local_path <local_path> --remote_path <remote_path>
+```
+#### Read a file
+```bash
+./target/release/client --target file --action read --local_path <local_path> --remote_path <remote_path>
+```
+
 ## Rest API
 The DFS provides a REST API for clients to interact with the system. The API allows clients to perform various operations such as uploading, downloading, deleting, and listing files. The API is implemented using the Rocket framework, which is a lightweight, high-performance web framework for Rust.
 
 ### Master
+#### Endpoint: `/user/register`
+- **Method**: `POST`
+- **Description**: Registers a new user by adding their credentials to the system. If the user already exists, an error response is returned.
 
-### Client
-#### Method: `user_authenticate`
-- **Description**: Authenticates a user with the DFS. If the user does not already exist, they are registered automatically. This function interacts with two endpoints: `/user/register` and `/user/login`.
-- **Parameters:**
-  - `user` : A reference to a User struct containing the user's credentials.
-- **Example Request**:
-    - ```bash
-        curl -X POST "http://<base_url>/user/register" \
-            -H "Content-Type: application/json" \
-            -d '{"username": "example_user", "password": "example_password"}'
-        ```
-    - ```bash
-        curl -X POST "http://<base_url>/user/login" \
-            -H "Content-Type: application/json" \
-            -d '{"username": "example_user", "password": "example_password"}'
-        ```
+- **Parameters**:
+  - `user`: A JSON object containing the new user's details.
+    - `username`: A string representing the username of the new user.
+    - `password`: A string representing the password for the new user.
+
+- **Request Example**:
+  ```bash
+  curl -X POST "http://<base_url>/user/register" -H "Content-Type: application/json" -d '{"username": "exampleuser", "password": "securepassword"}'
+    ```
+
+- **Success Response**:
+    - **Code**: 200
+
 - **Error Responses**:
     - **400 Bad Request**: If the request is malformed or missing required parameters.
-    - **401 Unauthorized**: If the user credentials are invalid.
+    - **409 Conflict**: If the user already exists in the system.
 
 ---
-#### Method: `create_file`
-- **Description**: Creates a new file in the DFS at the specified remote path. This function sends a POST request to the server with the file path as a query parameter.
+#### Endpoint: `/user/login`
+- **Method**: `POST`
+- **Description**: Authenticates a user by checking the provided credentials against the stored user data. If the user is not found or the password does not match, an error response is returned.
 
 - **Parameters**:
-  - `path`: A string slice representing the remote path where the new file should be created.
+  - `user`: A JSON object containing the user's credentials.
+    - `username`: A string representing the username of the user attempting to log in.
+    - `password`: A string representing the password of the user attempting to log in.
 
-- **Example Request**:
-    ```bash
-    curl -X POST "http://<base_url>/file/create?path=/example/path"
+- **Request Example**:
+  ```bash
+  curl -X POST "http://<base_url>/user/login" -H "Content-Type: application/json" -d '{"username": "exampleuser", "password": "securepassword"}'
     ```
-
 - **Success Response**:
-  - **Code**: 200
-  - **Content**: A JSON object containing the metadata of the newly created file.
-  - **Example Content**:
-    ```json
-    {
-        "file_id": "1234-5678",
-        "path": "/example/path",
-        "created_at": "2024-12-15T12:34:56Z"
-    }
-    ```
+    - **Code**: 200
+    - **Content**: A JSON object containing the user's authentication token.
 
 - **Error Responses**:
-  - **400 Bad Request**: If the request is malformed or missing required parameters.
-  - **409 Conflict**: If a file already exists at the specified path.
-  - **500 Internal Server Error**: If an unexpected server error occurs during file creation.
-
+    - **400 Bad Request**: If the request is malformed or missing required parameters.
+    - **401 Unauthorized**: If the user is not found or the password does not match.
 ---
-#### Method: `read_file`
-- **Description**: Reads the contents of a file from the DFS at the specified remote path. This function sends a GET request to the server to fetch the file's data as a list of `ChunkInfo`.
+#### Endpoint: `/file/create`
+- **Method**: `POST`
+- **Description**: Creates a new file at the specified path in the system. If the file already exists or an error occurs during creation, an appropriate error response is returned.
 
 - **Parameters**:
-  - `path`: A string slice representing the remote path of the file to be read.
+  - `path`: A string representing the path where the new file should be created.
 
-- **Example Request**:
-    ```bash
-    curl -X GET "http://<base_url>/file/read?path=/example/path"
-    ```
+- **Request Example**:
+  ```bash
+  curl -X POST "http://<base_url>/file/create?path=/path/to/file" -H "Content-Type: application/json"
 
-- **Success Response**:
-  - **Code**: 200
-  - **Content**: A JSON array containing metadata for each chunk of the file.
-  - **Example Content**:
-    ```json
-    [
-        {
-            "chunk_id": "1234-5678",
-            "offset": 0,
-            "size": 1024
-        },
-        {
-            "chunk_id": "5678-1234",
-            "offset": 1024,
-            "size": 2048
-        }
-    ]
-    ```
-
-- **Error Responses**:
-  - **400 Bad Request**: If the request is malformed or missing required parameters.
-  - **404 Not Found**: If the file at the specified path does not exist.
-  - **500 Internal Server Error**: If an unexpected server error occurs during file reading.
-
----
-#### Method: `update_file`
-- **Description**: Updates an existing file in the DFS at the specified remote path with a new size. This function sends a POST request to the server to update the file's metadata.
+--- 
+#### Endpoint: `/file/read`
+- **Method**: `GET`
+- **Description**: Reads a specific chunk of a file from the system. The function retrieves the chunk information based on the file path and chunk index.
 
 - **Parameters**:
-  - `path`: A string slice representing the remote path of the file to be updated.
-  - `size`: The new size for the file in bytes.
+  - `path`: A string representing the path to the file.
+  - `chunk`: An integer representing the chunk index to be read from the file.
 
-- **Example Request**:
-    ```bash
-    curl -X POST "http://<base_url>/file/update?path=/example/path&size=2048"
-    ```
-
-- **Success Response**:
-  - **Code**: 200
-  - **Content**: A JSON array containing the metadata for each updated chunk of the file.
-  - **Example Content**:
-    ```json
-    [
-        {
-            "chunk_id": "1234-5678",
-            "offset": 0,
-            "size": 1024
-        },
-        {
-            "chunk_id": "5678-1234",
-            "offset": 1024,
-            "size": 2048
-        }
-    ]
-    ```
-
-- **Error Responses**:
-  - **400 Bad Request**: If the request is malformed or missing required parameters.
-  - **404 Not Found**: If the file at the specified path does not exist.
-  - **500 Internal Server Error**: If an unexpected server error occurs during file update.
+- **Request Example**:
+  ```bash
+  curl -X GET "http://<base_url>/file/read?path=/path/to/file&chunk=0"
 
 ---
-#### Method: `create_directory`
-- **Description**: Creates a new directory in the DFS at the specified remote path. This function sends a POST request to the server to create a directory at the given path.
+#### Endpoint: `/file/update`
+- **Method**: `POST`
+- **Description**: Updates an existing file in the system by writing new data chunks. This function is used to modify the file's content or append new data. It returns the updated list of data chunks.
 
 - **Parameters**:
-  - `path`: A string slice representing the remote path where the new directory should be created.
+  - `path`: A string representing the path to the file.
+  - `size`: An integer indicating the size of the file after the update.
 
-- **Example Request**:
-    ```bash
-    curl -X POST "http://<base_url>/dir/create?path=/example/directory"
-    ```
-
-- **Success Response**:
-  - **Code**: 200
-  - **Content**: A string indicating the successful creation of the directory.
-  - **Example Content**:
-    ```json
-    "Directory /example/directory created successfully."
-    ```
-
-- **Error Responses**:
-  - **400 Bad Request**: If the request is malformed or missing required parameters.
-  - **409 Conflict**: If a directory already exists at the specified path.
-  - **500 Internal Server Error**: If an unexpected server error occurs during directory creation.
+- **Request Example**:
+  ```bash
+  curl -X POST "http://<base_url>/file/update?path=/path/to/file&size=1024"
 
 ---
-#### Method: `read_directory`
-- **Description**: Reads the contents of a directory in the DFS at the specified remote path. This function sends a GET request to the server to fetch information about the directory, including its contents.
+#### Endpoint: `/file/delete`
+- **Method**: `GET`
+- **Description**: Deletes a file from the system at the specified path. This action removes the file and all its associated data permanently.
 
 - **Parameters**:
-  - `path`: A string slice representing the remote path of the directory to be read.
+  - `path`: A string representing the path to the file that needs to be deleted.
 
-- **Example Request**:
-    ```bash
-    curl -X GET "http://<base_url>/dir/read?path=/example/directory"
-    ```
+- **Request Example**:
+  ```bash
+  curl -X GET "http://<base_url>/file/delete?path=/path/to/file"
 
-- **Success Response**:
-  - **Code**: 200
-  - **Content**: A JSON string containing the metadata of the directory and its contents.
-  - **Example Content**:
-    ```json
-    {
-        "path": "/example/directory",
-        "contents": [
-            {
-                "name": "file1.txt",
-                "size": 1024,
-                "type": "file"
-            },
-            {
-                "name": "subdir1",
-                "type": "directory"
-            }
-        ]
-    }
-    ```
-
-- **Error Responses**:
-  - **400 Bad Request**: If the request is malformed or missing required parameters.
-  - **404 Not Found**: If the directory at the specified path does not exist.
-  - **500 Internal Server Error**: If an unexpected server error occurs during directory reading.
 ---
+#### Endpoint: `/dir/create`
+- **Method**: `POST`
+- **Description**: Creates a new directory at the specified path in the file system. If a directory with the given path already exists, an error response will be returned.
+
+- **Parameters**:
+  - `path`: A string representing the path where the new directory should be created.
+
+- **Request Example**:
+  ```bash
+  curl -X POST "http://<base_url>/dir/create?path=/path/to/directory"
+
+---
+#### Endpoint: `/dir/read`
+- **Method**: `GET`
+- **Description**: Reads and returns the list of directories and files at the specified path in the file system.
+
+- **Parameters**:
+  - `path`: A string representing the path of the directory to read.
+
+- **Request Example**:
+  ```bash
+  curl -X GET "http://<base_url>/dir/read?path=/path/to/directory"
+
+---
+#### Endpoint: `/dir/delete`
+- **Method**: `POST`
+- **Description**: Deletes a directory at the specified path from the file system.
+
+- **Parameters**:
+  - `path`: A string representing the path of the directory to delete.
+
+- **Request Example**:
+  ```bash
+  curl -X POST "http://<base_url>/dir/delete?path=/path/to/directory"
+
+---
+
 ### Chunk Server
 #### Method: `add_chunk`
 - **Description**: Adds a chunk to the chunk manager. This endpoint expects a POST request with binary data as the body of the request and allows specifying a UUID to associate with the chunk.
@@ -292,26 +291,7 @@ The DFS provides a REST API for clients to interact with the system. The API all
 - **Error Responses:**
     - **400 Bad Request**: If the request is malformed or missing required parameters.
     - **404 Not Found**: If the chunk with the specified UUID does not exist.
----
-## How-to use
-### Build the project using "release" configuration
-```bash 
-cargo build --release 
-```
-### Launch the cluster from the root directory
-```bash
-launch_dfs.sh <number_of_nodes>
-```
-### Client Operations
-Once the cluster is up and running, you can interact with the DFS using the client application. The client application provides a command-line interface to perform various operations on the DFS. You can run the client application using the following command:
-#### Create a file
-```bash
-./target/release/client --target file --action create --local_path <local_path> --remote_path <remote_path>
-```
-#### Read a file
-```bash
-./target/release/client --target file --action read --local_path <local_path> --remote_path <remote_path>
-```
+
 
  ## References
  Ghemawat, S., Gobioff, H., & Leung, S.T. (2003). The Google file system. In Proceedings of the Nineteenth ACM Symposium on Operating Systems Principles (pp. 29–43). Association for Computing Machinery.
