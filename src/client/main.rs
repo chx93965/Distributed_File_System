@@ -101,8 +101,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     println!("{}", result);
                 }
                 Action::Delete => {
-                    // let result = client.delete_directory(path).await?;
-                    // println!("{}", result);
+                    let _result = master_client.delete_directory(remote_path).await?;
                 }
                 _ => {}
             }
@@ -119,8 +118,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     update_file(&master_client, local_path, remote_path).await?;
                 }
                 Action::Delete => {
-                    // let result = client.delete_file(path).await?;
-                    // println!("{}", result);
+                    delete_file(&master_client, remote_path).await?;
                 }
             }
         }
@@ -147,7 +145,7 @@ async fn create_file(master_client: &MasterClient, local_path: &str, remote_path
     // Signal master with file size
     let result: Vec<ChunkInfo> = master_client.update_file(remote_path, size).await?;
 
-    // Write to chunks
+    // Write to all chunks
     for chunk in result.iter() {
         let chunk_client = ChunkClient::new(&chunk.server_ip.as_str());
         let _result = chunk_client.add_chunk(&chunk.uuid, file.clone()).await.unwrap();
@@ -186,12 +184,28 @@ async fn update_file(master_client: &MasterClient, source_path: &str, destinatio
     // Signal master with file size
     let result: Vec<ChunkInfo> = master_client.update_file(destination_path, size).await?;
 
+    // update across all chunks
     for chunk in result.iter() {
         let chunk_client = ChunkClient::new(&chunk.server_ip.as_str());
-        let result = chunk_client.add_chunk(&chunk.uuid, file.clone()).await.unwrap();
+        let _result = chunk_client.append_chunk(&chunk.uuid, file.clone()).await.unwrap();
         // println!("{}", result);
     }
 
+    Ok(())
+}
+
+async fn delete_file(master_client: &MasterClient, remote_path: &str) -> Result<(), Error> {
+    // get file info from master
+    let result = master_client.read_file(remote_path).await?;
+
+    // delete file from master
+    let _result = master_client.delete_file(remote_path).await?;
+
+    // delete file from all chunks
+    for chunk in result.iter() {
+        let chunk_client = ChunkClient::new(&chunk.server_ip.as_str());
+        let _result = chunk_client.delete_chunk(&chunk.uuid).await.unwrap();
+    }
     Ok(())
 }
 

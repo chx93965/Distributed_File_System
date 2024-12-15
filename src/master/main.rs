@@ -178,8 +178,11 @@ async fn update_file(path:String, size:usize) -> Json<Vec<ChunkInfo>>{
 
 #[get("/file/delete?<path>")]
 async fn delete_file(path:String) -> Result<(), Error> {
-    file_delete(path);
-    Ok(())
+    let result = file_delete(path);
+    match result {
+        Ok(_) => Ok(()),
+        Err(e) => Err(Error::new(std::io::ErrorKind::NotFound, e))
+    }
 }
 
 #[post("/dir/create?<path>")]
@@ -199,8 +202,11 @@ async fn read_directory(path:String) -> Result<Json<DirectoryInfo>, Error> {
 
 #[post("/dir/delete?<path>")]
 async fn delete_directory(path:String) -> Result<(), Error> {
-    directory_delete(path);
-    Ok(())
+    let result = directory_delete(path);
+    match result {
+        Ok(_) => Ok(()),
+        Err(e) => Err(Error::new(std::io::ErrorKind::NotFound, e))
+    }
 }
 
 #[post("/user/register", data = "<user>")]

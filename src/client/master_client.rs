@@ -68,6 +68,16 @@ impl MasterClient {
         }
     }
 
+    pub async fn delete_file(&self, path: &str) -> Result<(), Error> {
+        let url = format!("{}/file/delete?path=/{}", self.base_url, path);
+        let response = self.client.get(&url).send().await.expect("Request failed");
+        if response.status().is_success() {
+            Ok(())
+        } else {
+            Err(Error::new(std::io::ErrorKind::Other, String::from("Failed to delete file")))
+        }
+    }
+
     pub async fn create_directory(&self, path: &str) -> Result<String, Error> {
         let url = format!("{}/dir/create?path=/{}", self.base_url, path);
         println!("{}", url);
@@ -90,6 +100,16 @@ impl MasterClient {
             Ok(result)
         } else {
             Err(Error::new(std::io::ErrorKind::Other, String::from("Failed to read directory")))
+        }
+    }
+
+    pub async fn delete_directory(&self, path: &str) -> Result<(), Error> {
+        let url = format!("{}/dir/delete?path=/{}", self.base_url, path);
+        let response = self.client.post(&url).send().await.expect("Request failed");
+        if response.status().is_success() {
+            Ok(())
+        } else {
+            Err(Error::new(std::io::ErrorKind::Other, String::from("Failed to delete directory")))
         }
     }
 }

@@ -280,10 +280,27 @@ pub fn file_create(path: String) -> Result<FileInfo, Error>{
     }
 }
 
-pub fn file_delete(path: String) {
-    /*
-     *   Call logger and wait to log operation
-     */
+pub fn file_delete(path: String) -> Result<(), String> {
+    let (directory, filename) = match path.rsplit_once('/') {
+        Some((dir, name)) if dir.is_empty() => ("/", name),
+        Some((dir, name)) => (dir, name),
+        None => ("/", path.as_str()),
+    };
+
+    let dir_lock = DIR_MAP
+        .get(&directory.to_string())
+        .ok_or_else(|| format!("{}: {}", NO_DIR_EXIST, directory))?;
+
+    let mut dir_write = dir_lock
+        .write()
+        .map_err(|_| "Failed to acquire write lock on directory".to_string())?;
+
+    if dir_write.files.remove(filename).is_some() {
+        println!("File '{}' deleted successfully", filename);
+        Ok(())
+    } else {
+        Err(format!("{}: {}", NO_FILE_EXIST, filename))
+    }
 }
 
 /*
@@ -376,8 +393,48 @@ pub fn directory_create(path: String) -> String {
     }
 }
 
-pub fn directory_delete(path: String) {
+pub fn directory_delete(path: String) -> Result<(), String> {
     /*
      *   Call logger and wait to log operation
      */
+
+    let dir_lock = DIR_MAP
+        .get(&path)
+        .ok_or_else(|| format!("{}: {}", NO_DIR_EXIST, path))?;
+
+    // Recursively delete files and subdirectories
+    {
+        let mut dir_write = dir_lock
+            .write()
+            .map_err(|_| "Failed to acquire write lock on directory".to_string())?;
+
+        // Delete all files in the directory
+        for file_name in dir_write.files.keys().cloned().collect::<Vec<_>>() {
+            dir_write.files.remove(&file_name);
+            println!("File '{}' deleted successfully from directory '{}'", file_name, path);
+        }
+    }
+
+    // Remove directory from its parent
+    let (parent_dir, dir_name) = match path.rsplit_once('/') {
+        Some((dir, name)) if dir.is_empty() => ("/", name),
+        Some((dir, name)) => (dir, name),
+        None => ("/", path.as_str()),
+    };
+
+    if let Some(parent_lock) = DIR_MAP.get(&parent_dir.to_string()) {
+        let mut parent_write = parent_lock
+            .write()
+            .map_err(|_| "Failed to acquire write lock on parent directory".to_string())?;
+
+        if parent_write.files.remove(dir_name).is_none() {
+            println!("Warning: Directory '{}' was not found in parent '{}'", dir_name, parent_dir);
+        }
+    }
+
+    // Finally, remove the directory itself from the DIR_MAP
+    DIR_MAP.remove(&path);
+    println!("Directory '{}' deleted successfully", path);
+
+    Ok(())
 }
