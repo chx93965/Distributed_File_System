@@ -41,6 +41,19 @@ impl Chunks {
         self.chunk_count += 1;
     }
 
+    pub fn delete_chunk(&mut self, id: Uuid) {
+        let chunk = self.find_chunk(id);
+        match chunk {
+            Some(chunk) => {
+                let chunk_path = Path::new(&self.chunks_dir).join(id.to_string());
+                std::fs::remove_file(&chunk_path).unwrap();
+                self.chunks.retain(|c| c.id != id);
+                self.chunk_count -= 1;
+            }
+            None => {}
+        }
+    }
+
     pub fn append_chunk(&mut self, data: Vec<u8>, id: Uuid) {
         let dir = Path::new(&self.chunks_dir);
         let chunk_path = dir.join(id.to_string());
@@ -123,6 +136,10 @@ impl ChunkManager {
 
     pub fn add_chunk(&mut self, data: Vec<u8>, id: Uuid) {
         self.chunks.add_chunk(data, id);
+    }
+
+    pub fn delete_chunk(&mut self, id: Uuid) {
+        self.chunks.delete_chunk(id);
     }
 
     pub fn get_chunk(&self, id: Uuid) -> Result<Vec<u8>, String> {

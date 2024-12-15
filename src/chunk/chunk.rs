@@ -73,6 +73,7 @@ async fn main() {
         .mount("/", routes![add_chunk])
         .mount("/", routes![get_chunk])
         .mount("/", routes![append_chunk])
+        .mount("/", routes![delete_chunk])
         .mount("/", routes![get_chunk_list]);
 
     // Start the Rocket server
@@ -261,6 +262,51 @@ async fn get_chunk(
     // Log the retrieval and respond with the chunk data
     log::info!("Chunk retrieved with ID: {}", id);
     Ok(chunk)
+}
+///
+/// Deletes a chunk from the ChunkManager by its UUID.
+/// 
+/// This endpoint accepts a GET request with the UUID of the chunk to delete as a query parameter.
+/// The UUID is used to look up the chunk in the ChunkManager, and if found, the chunk is deleted.
+/// 
+/// ## Parameters
+/// - `id`: A UUID string passed as a query parameter (`id=<UUID>`), which uniquely identifies the chunk to delete.
+/// 
+/// ## Returns
+/// - HTTP status `201 Created` with a message indicating the chunk was deleted successfully.
+/// - HTTP status `400 BadRequest` if the UUID is invalid.
+/// 
+/// ## Example Usage
+/// ```bash
+/// curl -X GET "http://127.0.0.1:8000/delete_chunk?id=<UUID>"
+/// ```
+/// This command deletes the chunk associated with the given UUID.
+/// 
+/// ## Error Handling
+/// - If the UUID is invalid or improperly formatted, the server responds with a `400 BadRequest` error.
+/// 
+#[get("/delete_chunk?<id>")]
+async fn delete_chunk(
+    state: &State<SharedChunkManager>,
+    id: String, // UUID as a query parameter
+) -> Result<status::Created<&'static str>, Status> {
+    let mut chunk_manager = state.lock().await;
+
+    // Parse the UUID from the query parameter
+    let id = match Uuid::parse_str(&id) {
+        Ok(uuid) => uuid,
+        Err(_) => {
+            error!("Invalid UUID provided");
+            return Err(Status::BadRequest);
+        }
+    };
+
+    // Delete the chunk from the ChunkManager
+    chunk_manager.delete_chunk(id);
+
+    // Log the deletion and respond with success
+    log::info!("Chunk deleted with ID: {}", id);
+    Ok(status::Created::new("/").body("Chunk deleted\n"))
 }
 
 #[get("/get_chunk_list")]
