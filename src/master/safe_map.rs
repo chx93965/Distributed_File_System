@@ -61,4 +61,16 @@ where
             .map(|map| map.keys().cloned().collect())
             .unwrap_or_default()
     }
+
+    pub fn to_map(&self) -> HashMap<A, T>
+    where
+        A: Clone,
+        T: Clone
+    {
+        let guard = self.inner.lock().unwrap();
+        guard.as_ref()
+            .map(|inner_map| inner_map.iter()
+                .map(|(k, v)| (k.clone(), v.read().unwrap().clone())).collect())
+            .unwrap_or_default()
+    }
 }

@@ -25,7 +25,10 @@ mod chunk_manager;
 mod safe_map;
 mod heartbeat_manager;
 
-const USER_INFO: &str = "users.json";
+const USER_INFO:&str = "users.json";
+const DIR_FILE:&str = "dir.json";
+const CHUNK_FILE:&str = "chunk.json";
+const SERVER_FILE:&str = "server.json";
 
 struct UserDatabase {
     users: RwLock<HashMap<String, String>>,
@@ -61,6 +64,21 @@ impl UserDatabase {
         file.write_all(b"\n").await?;
         Ok(())
     }
+}
+
+async fn persistent_storage_init() {
+    let file = OpenOptions::new()
+        .read(true).create(true)
+        .open(DIR_FILE).await.unwrap();
+    let reader = BufReader::new(file);
+
+    let file = OpenOptions::new()
+        .read(true).create(true)
+        .open(CHUNK_FILE).await.unwrap();
+
+    let file = OpenOptions::new()
+        .read(true).create(true)
+        .open(SERVER_FILE).await.unwrap();
 }
 
 /*
@@ -109,6 +127,8 @@ async fn main() {
         log::Level::Warn,
         log::Level::Error,
     ]);
+
+    persistent_storage_init().await;
 
     namespace_manager::namespace_manager_init();
     chunk_manager::chunk_manager_init();

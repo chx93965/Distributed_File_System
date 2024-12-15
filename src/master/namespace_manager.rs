@@ -11,6 +11,9 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::RwLock;
 use rocket::serde::json::Json;
+use serde::Serialize;
+use tokio::fs::OpenOptions;
+use tokio::io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader};
 use uuid::Uuid;
 use lib::shared::master_client_utils::{FileInfo, DirectoryInfo, Metadata};
 
@@ -158,6 +161,17 @@ impl FileNode {
                     .map(|uuid| uuid.to_string()).collect()).collect(),
         }
     }
+
+    pub fn deserialize(info: &FileInfo) -> Self {
+        Self {
+            file_name: info.file_name.clone(),
+            file_parent: info.file_parent.clone(),
+            file_metadata: info.file_metadata.clone(),
+            chunks: info.chunks.iter()
+                .map(|x| x.iter()
+                    .map(|uuid| Uuid::parse_str(uuid).unwrap()).collect()).collect(),
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -196,12 +210,71 @@ impl DirectoryNode {
                                v.read().unwrap().serialize())).collect(),
         }
     }
+
+    pub fn deserialize(info: DirectoryInfo) -> Self {
+        let mut files = HashMap::new();
+        info.files.iter().for_each(|(k, v)| {
+            files.insert(k.clone(), Arc::new(RwLock::new(FileNode::deserialize(v))));
+        });
+
+        Self {
+            dir_name: info.dir_name.clone(),
+            dir_parent: info.dir_parent.clone(),
+            dir_metadata: info.dir_metadata.clone(),
+            files,
+        }
+    }
+}
+
+impl Clone for DirectoryNode {
+    // files: HashMap<String, Arc<RwLock<FileNode>>> is not cloneable
+    fn clone(&self) -> Self {
+        let files_clone = self.files.iter()
+            .map(|(k, v)| (k.clone(),
+                           Arc::new(RwLock::new(v.read().unwrap().clone())))
+            ).collect();
+        Self {
+            dir_name: self.dir_name.clone(),
+            dir_parent: self.dir_parent.clone(),
+            dir_metadata: self.dir_metadata.clone(),
+            files: files_clone,
+        }
+    }
 }
 
 static DIR_MAP: SafeMap<String, DirectoryNode> = SafeMap::new();
 
+// TODO: pass DIR_MAP from main
+pub async fn save_dir_state() {
+    let mut file = OpenOptions::new()
+        .write(true).create(true)
+        .open("dir.json").await.unwrap();
+
+    for (_, dir) in DIR_MAP.to_map().iter() {
+        let data = serde_json::to_string(&dir.serialize()).unwrap();
+        file.write_all(data.as_bytes()).await.unwrap();
+        file.write_all(b"\n").await.unwrap();
+    }
+}
+
+pub async fn load_dir_state() {
+    let file = OpenOptions::new()
+        .read(true).create(true)
+        .open("dir.json").await.unwrap();
+
+    let reader = BufReader::new(file);
+    let mut lines = reader.lines();
+
+    while let Some(line_result) = lines.next_line().await.unwrap() {
+        let dir: DirectoryInfo = serde_json::from_str(&line_result).unwrap();
+        let node = DirectoryNode::deserialize(dir);
+        DIR_MAP.insert(node.dir_name.clone(), node);
+    }
+}
+
 pub fn namespace_manager_init() {
     DIR_MAP.init();
+    load_dir_state();
     let root_metadata = Metadata::new(DIR_SIZE, 0x666, "0".to_string(), "root".to_string());
     DirectoryNode::new("/".to_string(), root_metadata, "/".to_string());
 }
@@ -265,6 +338,7 @@ pub fn file_create(path: String) -> Result<FileInfo, Error>{
         
         match FileNode::new(filename.to_string(), directory.to_string(), m) {
             Ok(file) => {
+                save_dir_state();
                 println!("{}", CREATED_FILE_SUCCESSFULLY);
                 Ok(file.serialize())
             }
@@ -296,6 +370,7 @@ pub fn file_delete(path: String) -> Result<(), String> {
         .map_err(|_| "Failed to acquire write lock on directory".to_string())?;
 
     if dir_write.files.remove(filename).is_some() {
+        save_dir_state();
         println!("File '{}' deleted successfully", filename);
         Ok(())
     } else {
@@ -339,6 +414,7 @@ pub fn file_write(path: String, size: usize) -> Result<Vec<(Uuid,String)>, Strin
     // parent.read().unwrap().files.get()
     let chunks = write_chunks(size);
     file.write().unwrap().chunks.push(chunks.iter().map(|x| x.0).collect::<Vec<Uuid>>());
+    save_dir_state();
     Ok(chunks)
 }
 
@@ -384,6 +460,7 @@ pub fn directory_create(path: String) -> String {
             let m = Metadata::new(
                 FILE_SIZE, 0x666, "1".to_string(), "user".to_string());
             DirectoryNode::new(path, m, parent.read().unwrap().dir_name.to_string());
+            save_dir_state();
             println!("{}", CREATED_DIR_SUCCESSFULLY);
             CREATED_DIR_SUCCESSFULLY.to_string()
         } else {
@@ -432,8 +509,9 @@ pub fn directory_delete(path: String) -> Result<(), String> {
         }
     }
 
-    // Finally, remove the directory itself from the DIR_MAP
+    // Finally remove the directory itself from the DIR_MAP
     DIR_MAP.remove(&path);
+    save_dir_state();
     println!("Directory '{}' deleted successfully", path);
 
     Ok(())
