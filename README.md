@@ -1,15 +1,15 @@
 # Distributed File System in Rust
-## Team Members
+## Project Members
 | Name                     | Student Number | Email Address                 |
 |--------------------------|----------------|-------------------------------|
 | Swapnil Patel            | 99728870       | Swap.patel@mail.utoronto.ca   |
 | Hanxiao Chang            | [Insert Here]  | [Insert Here]                 |
-| Mohammad Hooman Keshvari | [Insert Here]  | [Insert Here]                 |
+| Mohammad Hooman Keshvari | [Insert Here]  | Hooman.keshvari@mail.utoronto.ca                 |
 
 ### Contribution 
 - Swapnil Patel: Chunk server, cluster management, documentation
 - Hanxiao Chang: 
-- Mohammad Hooman Keshvari:
+- Mohammad Hooman Keshvari: Master Node
 
 ## Table of Contents
 - [Proposals](./PROPOSAL.md)
