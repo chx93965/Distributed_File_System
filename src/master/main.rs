@@ -68,16 +68,16 @@ impl UserDatabase {
 
 async fn persistent_storage_init() {
     let file = OpenOptions::new()
-        .read(true).create(true)
+        .read(true).write(true).create(true)
         .open(DIR_FILE).await.unwrap();
     let reader = BufReader::new(file);
 
     let file = OpenOptions::new()
-        .read(true).create(true)
+        .read(true).write(true).create(true)
         .open(CHUNK_FILE).await.unwrap();
 
     let file = OpenOptions::new()
-        .read(true).create(true)
+        .read(true).write(true).create(true)
         .open(SERVER_FILE).await.unwrap();
 }
 
