@@ -1,6 +1,17 @@
 # Distributed File System in Rust
+## Team Members
+| Name                     | Student Number | Email Address                 |
+|--------------------------|----------------|-------------------------------|
+| Swapnil Patel            | 99728870       | Swap.patel@mail.utoronto.ca   |
+| Hanxiao Chang            | [Insert Here]  | [Insert Here]                 |
+| Mohammad Hooman Keshvari | [Insert Here]  | [Insert Here]                 |
 
-### Table of Contents
+### Contribution 
+- Swapnil Patel: Chunk server, cluster management, documentation
+- Hanxiao Chang: 
+- Mohammad Hooman Keshvari:
+
+## Table of Contents
 - [Proposals](./PROPOSAL.md)
 - [Introduction](#introduction)
 - [Architecture](#architecture)
@@ -28,7 +39,7 @@ Our DFS is inspired by the Google File System (GFS) architecture, which is a dis
 
 1\. **Master Server**: The master server is responsible for managing the metadata of the file system, such as file locations, access permissions, and replication policies. It keeps track of the file system's state and coordinates operations across multiple servers.
 
-2\. **Chunk Servers**: The chunk servers store the actual data in the form of fixed-size chunks. Each chunk is replicated across multiple chunk servers to ensure data availability and reliability. The chunk servers are responsible for storing, replicating, and serving data to clients.
+2\. **Chunk Servers**: The chunk servers store the actual data in the form of fixed-size chunks. Each chunk is replicated across multiple chunk servers to ensure data availability and reliability. The chunk servers are responsible for storing, replicating, and serving data to clients. *note: Chunk replication is still in progress*
 
 3\. **Client**: The client interacts with the master server to perform file operations such as reading, writing, and deleting files. The client communicates with the chunk servers to read and write data chunks.
 
@@ -43,6 +54,7 @@ The DFS provides a REST API for clients to interact with the system. The API all
 
 ### Client
 
+---
 ### Chunk Server
 #### Method: `add_chunk`
 - **Description**: Adds a chunk to the chunk manager. This endpoint expects a POST request with binary data as the body of the request and allows specifying a UUID to associate with the chunk.
@@ -58,7 +70,7 @@ The DFS provides a REST API for clients to interact with the system. The API all
 - **Error Responses:**
   - **400 Bad Request**: If the request is malformed or missing required parameters.
   - **413 Payload Too Large**: If the chunk size exceeds the maximum allowed size.
-
+---
 #### Method: `get_chunk`
 - **Description**: Retrieves a chunk from the chunk manager. This endpoint expects a GET request with the UUID of the chunk to be retrieved.
 - **Parameters:**
@@ -70,7 +82,7 @@ The DFS provides a REST API for clients to interact with the system. The API all
 - **Error Responses:**
     - **400 Bad Request**: If the request is malformed or missing required parameters.
     - **404 Not Found**: If the chunk with the specified UUID does not exist.
-
+---
 #### Method: `get_chunk_list`
 - **Description**: Retrieves a list of all chunks stored in the chunk manager. This endpoint expects a GET request without any parameters.
 - **Example Request:**
@@ -86,7 +98,19 @@ The DFS provides a REST API for clients to interact with the system. The API all
         ```
 - **Error Responses:**
     - **400 Bad Request**: If the request is malformed or contains invalid parameters.
-    
+---
+#### Method: `delete_chunk`
+- **Description**: Deletes a chunk from the chunk manager. This endpoint expects a DELETE request with the UUID of the chunk to be deleted.
+- **Parameters:**
+  - `chunk_id`: The UUID of the chunk to be deleted.
+- **Example Request:**
+    -   ```bash
+        curl -X GET "http://127.0.0.1:8100/delete_chunk?id=<UUID>"
+        ```
+- **Error Responses:**
+    - **400 Bad Request**: If the request is malformed or missing required parameters.
+    - **404 Not Found**: If the chunk with the specified UUID does not exist.
+---
 ## How-to use
 ### Build the project using "release" configuration
 ```bash 
