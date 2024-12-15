@@ -53,7 +53,189 @@ The DFS provides a REST API for clients to interact with the system. The API all
 ### Master
 
 ### Client
+#### Method: `user_authenticate`
+- **Description**: Authenticates a user with the DFS. If the user does not already exist, they are registered automatically. This function interacts with two endpoints: `/user/register` and `/user/login`.
+- **Parameters:**
+  - `user` : A reference to a User struct containing the user's credentials.
+- **Example Request**:
+    - ```bash
+        curl -X POST "http://<base_url>/user/register" \
+            -H "Content-Type: application/json" \
+            -d '{"username": "example_user", "password": "example_password"}'
+        ```
+    - ```bash
+        curl -X POST "http://<base_url>/user/login" \
+            -H "Content-Type: application/json" \
+            -d '{"username": "example_user", "password": "example_password"}'
+        ```
+- **Error Responses**:
+    - **400 Bad Request**: If the request is malformed or missing required parameters.
+    - **401 Unauthorized**: If the user credentials are invalid.
 
+---
+#### Method: `create_file`
+- **Description**: Creates a new file in the DFS at the specified remote path. This function sends a POST request to the server with the file path as a query parameter.
+
+- **Parameters**:
+  - `path`: A string slice representing the remote path where the new file should be created.
+
+- **Example Request**:
+    ```bash
+    curl -X POST "http://<base_url>/file/create?path=/example/path"
+    ```
+
+- **Success Response**:
+  - **Code**: 200
+  - **Content**: A JSON object containing the metadata of the newly created file.
+  - **Example Content**:
+    ```json
+    {
+        "file_id": "1234-5678",
+        "path": "/example/path",
+        "created_at": "2024-12-15T12:34:56Z"
+    }
+    ```
+
+- **Error Responses**:
+  - **400 Bad Request**: If the request is malformed or missing required parameters.
+  - **409 Conflict**: If a file already exists at the specified path.
+  - **500 Internal Server Error**: If an unexpected server error occurs during file creation.
+
+---
+#### Method: `read_file`
+- **Description**: Reads the contents of a file from the DFS at the specified remote path. This function sends a GET request to the server to fetch the file's data as a list of `ChunkInfo`.
+
+- **Parameters**:
+  - `path`: A string slice representing the remote path of the file to be read.
+
+- **Example Request**:
+    ```bash
+    curl -X GET "http://<base_url>/file/read?path=/example/path"
+    ```
+
+- **Success Response**:
+  - **Code**: 200
+  - **Content**: A JSON array containing metadata for each chunk of the file.
+  - **Example Content**:
+    ```json
+    [
+        {
+            "chunk_id": "1234-5678",
+            "offset": 0,
+            "size": 1024
+        },
+        {
+            "chunk_id": "5678-1234",
+            "offset": 1024,
+            "size": 2048
+        }
+    ]
+    ```
+
+- **Error Responses**:
+  - **400 Bad Request**: If the request is malformed or missing required parameters.
+  - **404 Not Found**: If the file at the specified path does not exist.
+  - **500 Internal Server Error**: If an unexpected server error occurs during file reading.
+
+---
+#### Method: `update_file`
+- **Description**: Updates an existing file in the DFS at the specified remote path with a new size. This function sends a POST request to the server to update the file's metadata.
+
+- **Parameters**:
+  - `path`: A string slice representing the remote path of the file to be updated.
+  - `size`: The new size for the file in bytes.
+
+- **Example Request**:
+    ```bash
+    curl -X POST "http://<base_url>/file/update?path=/example/path&size=2048"
+    ```
+
+- **Success Response**:
+  - **Code**: 200
+  - **Content**: A JSON array containing the metadata for each updated chunk of the file.
+  - **Example Content**:
+    ```json
+    [
+        {
+            "chunk_id": "1234-5678",
+            "offset": 0,
+            "size": 1024
+        },
+        {
+            "chunk_id": "5678-1234",
+            "offset": 1024,
+            "size": 2048
+        }
+    ]
+    ```
+
+- **Error Responses**:
+  - **400 Bad Request**: If the request is malformed or missing required parameters.
+  - **404 Not Found**: If the file at the specified path does not exist.
+  - **500 Internal Server Error**: If an unexpected server error occurs during file update.
+
+---
+#### Method: `create_directory`
+- **Description**: Creates a new directory in the DFS at the specified remote path. This function sends a POST request to the server to create a directory at the given path.
+
+- **Parameters**:
+  - `path`: A string slice representing the remote path where the new directory should be created.
+
+- **Example Request**:
+    ```bash
+    curl -X POST "http://<base_url>/dir/create?path=/example/directory"
+    ```
+
+- **Success Response**:
+  - **Code**: 200
+  - **Content**: A string indicating the successful creation of the directory.
+  - **Example Content**:
+    ```json
+    "Directory /example/directory created successfully."
+    ```
+
+- **Error Responses**:
+  - **400 Bad Request**: If the request is malformed or missing required parameters.
+  - **409 Conflict**: If a directory already exists at the specified path.
+  - **500 Internal Server Error**: If an unexpected server error occurs during directory creation.
+
+---
+#### Method: `read_directory`
+- **Description**: Reads the contents of a directory in the DFS at the specified remote path. This function sends a GET request to the server to fetch information about the directory, including its contents.
+
+- **Parameters**:
+  - `path`: A string slice representing the remote path of the directory to be read.
+
+- **Example Request**:
+    ```bash
+    curl -X GET "http://<base_url>/dir/read?path=/example/directory"
+    ```
+
+- **Success Response**:
+  - **Code**: 200
+  - **Content**: A JSON string containing the metadata of the directory and its contents.
+  - **Example Content**:
+    ```json
+    {
+        "path": "/example/directory",
+        "contents": [
+            {
+                "name": "file1.txt",
+                "size": 1024,
+                "type": "file"
+            },
+            {
+                "name": "subdir1",
+                "type": "directory"
+            }
+        ]
+    }
+    ```
+
+- **Error Responses**:
+  - **400 Bad Request**: If the request is malformed or missing required parameters.
+  - **404 Not Found**: If the directory at the specified path does not exist.
+  - **500 Internal Server Error**: If an unexpected server error occurs during directory reading.
 ---
 ### Chunk Server
 #### Method: `add_chunk`
