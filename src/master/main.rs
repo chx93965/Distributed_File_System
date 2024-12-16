@@ -19,6 +19,7 @@ use lib::shared::{log_manager, master_client_utils::ChunkInfo};
 use lib::shared::master_client_utils::{DirectoryInfo, FileInfo, User};
 use namespace_manager::{directory_create, directory_delete, list_directory,
                         file_create, file_read, file_write, file_delete};
+use crate::namespace_manager::file_read_all;
 
 mod namespace_manager;
 mod chunk_manager;
@@ -154,6 +155,7 @@ async fn main() {
             login,
             create_file,
             read_file,
+            read_all_file,
             update_file,
             delete_file,
             create_directory,
@@ -183,11 +185,17 @@ async fn create_file(path:String) -> Result<Json<FileInfo>, Error> {
     }
 }
 
-#[get("/file/read?<path>&<chunk>")]
-async fn read_file(path:String, chunk:usize) -> Json<Vec<ChunkInfo>>{
-    let chunks = file_read(path, chunk).unwrap();
+#[get("/file/read?<path>")]
+async fn read_file(path:String) -> Json<Vec<ChunkInfo>>{
+    let chunks = file_read(path).unwrap();
     Json(ChunkInfo::serialize(chunks))
     // TODO: error handling for non-existent chunk index
+}
+
+#[get("/file/read/all?<path>")]
+async fn read_all_file(path:String) -> Json<Vec<ChunkInfo>>{
+    let chunks = file_read_all(path).unwrap();
+    Json(ChunkInfo::serialize(chunks))
 }
 
 #[post("/file/update?<path>&<size>")]
