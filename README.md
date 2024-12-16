@@ -9,7 +9,7 @@
 ### Contribution 
 - Swapnil Patel: Chunk server, cluster management, documentation
 - Hanxiao Chang: 
-- Mohammad Hooman Keshvari: Master Node
+- Mohammad Hooman Keshvari: Master Node Logic and Implementation, Benchmarking
 
 # Table of Contents
 - [Proposals](./PROPOSAL.md)
