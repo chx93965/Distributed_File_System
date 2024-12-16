@@ -48,7 +48,6 @@ impl ChunkClient {
 
     pub async fn delete_chunk(&self, id: &str) -> Result<String, Error> {
         let url = format!("http://{}/delete_chunk?id={}", self.base_url, id);
-        println!("{}", url);
         let response = self.client.get(&url).send().await.expect("Request failed");
         if response.status().is_success() {
             Ok(response.status().to_string())
