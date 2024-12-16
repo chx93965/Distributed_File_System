@@ -37,6 +37,7 @@ impl MasterClient {
 
     pub async fn create_file(&self, path: &str) -> Result<FileInfo, Error> {
         let url = format!("{}/file/create?path=/{}", self.base_url, path);
+        println!("{}", url);
         let response = self.client.post(&url).send().await.expect("Request failed");
         if response.status().is_success() {
             let result = response.json::<FileInfo>().await.expect("Failed to parse response");
@@ -59,6 +60,7 @@ impl MasterClient {
 
     pub async fn update_file(&self, path: &str, size: usize) -> Result<Vec<ChunkInfo>, Error> {
         let url = format!("{}/file/update?path=/{}&size={}", self.base_url, path, size);
+        println!("{}", url);
         let response = self.client.post(&url).send().await.expect("Request failed");
         if response.status().is_success() {
             let result = response.json::<Vec<ChunkInfo>>().await.expect("Failed to parse response");
@@ -80,7 +82,6 @@ impl MasterClient {
 
     pub async fn create_directory(&self, path: &str) -> Result<String, Error> {
         let url = format!("{}/dir/create?path=/{}", self.base_url, path);
-        println!("{}", url);
         let response = self.client.post(&url).send().await.expect("Request failed");
         if response.status().is_success() {
             let result = response.text().await.expect("Failed to parse response");

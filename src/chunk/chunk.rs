@@ -31,7 +31,7 @@ type SharedChunkManager = Arc<Mutex<chunk_manager::ChunkManager>>;
 async fn main() {
     // Set the logging level and format
     log_manager::set_logging(&[
-        log::Level::Info,
+        // log::Level::Info,
         log::Level::Debug,
         log::Level::Warn,
         log::Level::Error,

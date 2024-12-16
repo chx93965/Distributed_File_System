@@ -132,7 +132,7 @@ async fn main() {
 
     namespace_manager::namespace_manager_init();
     chunk_manager::chunk_manager_init();
-    heartbeat_manager::heartbeat_manager_init();
+    // heartbeat_manager::heartbeat_manager_init();
 
     let user_db = UserDatabase::new().await;
     /*
@@ -263,9 +263,9 @@ async fn login(user:Json<User>, user_db: &State<UserDatabase>) -> Result<(), Err
 }
 
 
-fn update_namespace(){
-
-}
+// fn update_namespace(){
+//
+// }
 
 /*
 *   Heartbeat received from chunkservers.
@@ -275,10 +275,8 @@ fn update_namespace(){
 */
 #[post("/heartbeat", format = "json", data = "<metadata>")]
 async fn chunkserver_heartbeat(metadata: Json<heartbeat_manager::Metadata>) -> Result<(), Error> {
-    // debug!("{:?}", metadata);
-    // received chunkser from port address
-    warn!("Received heartbeat from chunkserver id: {}", metadata.chunkserver_id);
-    heartbeat_manager::receive_heartbeat(metadata);
-    // print received heartbeat from chunkserver id 
+    debug!("{:?}", metadata);
+    debug!("Received heartbeat from chunkserver id: {}", metadata.chunkserver_id);
+    heartbeat_manager::receive_heartbeat(metadata).await;
     Ok(())
 }

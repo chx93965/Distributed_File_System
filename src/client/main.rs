@@ -148,6 +148,7 @@ async fn create_file(master_client: &MasterClient, local_path: &str, remote_path
     // Write to all chunks
     for chunk in result.iter() {
         let chunk_client = ChunkClient::new(&chunk.server_ip.as_str());
+        println!("{:?}", file);
         let _result = chunk_client.add_chunk(&chunk.uuid, file.clone()).await.unwrap();
         // println!("{}", result);
     }
