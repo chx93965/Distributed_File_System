@@ -17,6 +17,7 @@
 - [Architecture](#architecture)
 - [How-to use](#how-to-use)
 - [Rest API](#rest-api)
+- [Benchmark](#dfs-benchmarking-tool)
 - [References](#references)
 
 # Introduction
