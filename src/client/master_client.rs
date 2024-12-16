@@ -57,6 +57,17 @@ impl MasterClient {
         }
     }
 
+    pub async fn read_all_file(&self, path: &str) -> Result<Vec<ChunkInfo>, Error> {
+        let url = format!("{}/file/read/all?path=/{}", self.base_url, path);
+        let response = self.client.get(&url).send().await.expect("Request failed");
+        if response.status().is_success() {
+            let result = response.json::<Vec<ChunkInfo>>().await.expect("Failed to parse response");
+            Ok(result)
+        } else {
+            Err(Error::new(std::io::ErrorKind::Other, String::from("Failed to read all file chunks")))
+        }
+    }
+
     pub async fn update_file(&self, path: &str, size: usize) -> Result<Vec<ChunkInfo>, Error> {
         let url = format!("{}/file/update?path=/{}&size={}", self.base_url, path, size);
         let response = self.client.post(&url).send().await.expect("Request failed");
@@ -80,7 +91,6 @@ impl MasterClient {
 
     pub async fn create_directory(&self, path: &str) -> Result<String, Error> {
         let url = format!("{}/dir/create?path=/{}", self.base_url, path);
-        println!("{}", url);
         let response = self.client.post(&url).send().await.expect("Request failed");
         if response.status().is_success() {
             let result = response.text().await.expect("Failed to parse response");

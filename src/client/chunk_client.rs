@@ -14,7 +14,7 @@ impl ChunkClient {
     }
 
     pub async fn add_chunk(&self, id: &str, data: Vec<u8>) -> Result<String, Error> {
-        let url = format!("{}/add_chunk?id={}", self.base_url, id);
+        let url = format!("http://{}/add_chunk?id={}", self.base_url, id);
         let response = self.client.post(&url).body(data).send()
             .await.expect("Request failed");
         if response.status().is_success() {
@@ -24,8 +24,8 @@ impl ChunkClient {
         }
     }
 
-    pub async fn append_chunk(&self, id: &str, data: Vec<u8>) -> Result<String, Error> {
-        let url = format!("{}/append_chunk?id={}", self.base_url, id);
+    pub async fn update_chunk(&self, id: &str, data: Vec<u8>) -> Result<String, Error> {
+        let url = format!("http://{}/update_chunk?id={}", self.base_url, id);
         let response = self.client.post(&url).body(data).send()
             .await.expect("Request failed");
         if response.status().is_success() {
@@ -36,7 +36,7 @@ impl ChunkClient {
     }
 
     pub async fn get_chunk(&self, id: &str) -> Result<Vec<u8>, Error> {
-        let url = format!("{}/get_chunk?id={}", self.base_url, id);
+        let url = format!("http://{}/get_chunk?id={}", self.base_url, id);
         let response = self.client.get(&url).send().await.expect("Request failed");
         if response.status().is_success() {
             let result = response.bytes().await.expect("Failed to parse response");
@@ -47,8 +47,9 @@ impl ChunkClient {
     }
 
     pub async fn delete_chunk(&self, id: &str) -> Result<String, Error> {
-        let url = format!("{}/delete_chunk?id={}", self.base_url, id);
-        let response = self.client.post(&url).send().await.expect("Request failed");
+        let url = format!("http://{}/delete_chunk?id={}", self.base_url, id);
+        println!("{}", url);
+        let response = self.client.get(&url).send().await.expect("Request failed");
         if response.status().is_success() {
             Ok(response.status().to_string())
         } else {
@@ -58,7 +59,7 @@ impl ChunkClient {
 
     #[allow(unused)]
     pub async fn get_chunk_list(&self) -> Result<Vec<String>, Error> {
-        let url = format!("{}/get_chunk_list", self.base_url);
+        let url = format!("http://{}/get_chunk_list", self.base_url);
         let response = self.client.get(&url).send().await.expect("Request failed");
         if response.status().is_success() {
             let result = response.json::<Vec<String>>().await.expect("Failed to parse response");

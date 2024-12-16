@@ -19,6 +19,7 @@ use lib::shared::{log_manager, master_client_utils::ChunkInfo};
 use lib::shared::master_client_utils::{DirectoryInfo, FileInfo, User};
 use namespace_manager::{directory_create, directory_delete, list_directory,
                         file_create, file_read, file_write, file_delete};
+use crate::namespace_manager::file_read_all;
 
 mod namespace_manager;
 mod chunk_manager;
@@ -132,7 +133,7 @@ async fn main() {
 
     namespace_manager::namespace_manager_init();
     chunk_manager::chunk_manager_init();
-    heartbeat_manager::heartbeat_manager_init();
+    // heartbeat_manager::heartbeat_manager_init();
 
     let user_db = UserDatabase::new().await;
     /*
@@ -154,6 +155,7 @@ async fn main() {
             login,
             create_file,
             read_file,
+            read_all_file,
             update_file,
             delete_file,
             create_directory,
@@ -183,11 +185,17 @@ async fn create_file(path:String) -> Result<Json<FileInfo>, Error> {
     }
 }
 
-#[get("/file/read?<path>&<chunk>")]
-async fn read_file(path:String, chunk:usize) -> Json<Vec<ChunkInfo>>{
-    let chunks = file_read(path, chunk).unwrap();
+#[get("/file/read?<path>")]
+async fn read_file(path:String) -> Json<Vec<ChunkInfo>>{
+    let chunks = file_read(path).unwrap();
     Json(ChunkInfo::serialize(chunks))
     // TODO: error handling for non-existent chunk index
+}
+
+#[get("/file/read/all?<path>")]
+async fn read_all_file(path:String) -> Json<Vec<ChunkInfo>>{
+    let chunks = file_read_all(path).unwrap();
+    Json(ChunkInfo::serialize(chunks))
 }
 
 #[post("/file/update?<path>&<size>")]
@@ -263,9 +271,9 @@ async fn login(user:Json<User>, user_db: &State<UserDatabase>) -> Result<(), Err
 }
 
 
-fn update_namespace(){
-
-}
+// fn update_namespace(){
+//
+// }
 
 /*
 *   Heartbeat received from chunkservers.
@@ -275,10 +283,8 @@ fn update_namespace(){
 */
 #[post("/heartbeat", format = "json", data = "<metadata>")]
 async fn chunkserver_heartbeat(metadata: Json<heartbeat_manager::Metadata>) -> Result<(), Error> {
-    // debug!("{:?}", metadata);
-    // received chunkser from port address
-    warn!("Received heartbeat from chunkserver id: {}", metadata.chunkserver_id);
-    heartbeat_manager::receive_heartbeat(metadata);
-    // print received heartbeat from chunkserver id 
+    debug!("{:?}", metadata);
+    debug!("Received heartbeat from chunkserver id: {}", metadata.chunkserver_id);
+    heartbeat_manager::receive_heartbeat(metadata).await;
     Ok(())
 }

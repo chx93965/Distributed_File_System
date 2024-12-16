@@ -4,6 +4,13 @@ use sysinfo::{Disks, System};
 use reqwest::Client;
 use lib::shared::master_chunk_utils::{Disk, Metadata, HEARTBEAT_INTERVAL};
 
+#[allow(unused)]
+fn get_own_ip() -> Option<String> {
+    use std::net::{UdpSocket};
+    let socket = UdpSocket::bind("0.0.0.0:0").ok()?;
+    socket.connect("8.8.8.8:80").ok()?;
+    socket.local_addr().map(|addr| addr.ip().to_string()).ok()
+}
 
 ///
 /// Periodically sends a heartbeat to the master server.
@@ -31,6 +38,8 @@ pub async fn heartbeat(port: u16) {
         os_name: System::name().unwrap_or_else(|| "Unknown".to_string()),
         os_version: System::os_version().unwrap_or_else(|| "Unknown".to_string()),
         host_name: System::host_name().unwrap_or_else(|| "Unknown".to_string()),
+        // ip: get_own_ip().unwrap_or_else(|| "localhost".to_string()),
+        ip: "localhost".to_string(),
         chunkserver_id: port,
         last_heartbeat: 0,
         disk_info: Disk {
@@ -65,6 +74,7 @@ pub async fn heartbeat(port: u16) {
     debug!("OS Name: {}", metadata.os_name);
     debug!("OS Version: {}", metadata.os_version);
     debug!("Host Name: {}", metadata.host_name);
+    debug!("IP: {}", metadata.ip);
     debug!("Chunkserver ID: {}", metadata.chunkserver_id);
     debug!("Disk Name: {}", metadata.disk_info.name);
     debug!("Disk Kind: {}", metadata.disk_info.kind);

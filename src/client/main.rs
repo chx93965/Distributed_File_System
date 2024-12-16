@@ -164,6 +164,7 @@ async fn read_file(master_client: &MasterClient, source_path: &str, destination_
         return Err(Error::new(std::io::ErrorKind::NotFound, "File not found"));
     }
     let chunk = result.first().unwrap();
+    println!("{:?}", chunk);
 
     // Read from chunk
     let chunk_client = ChunkClient::new(&chunk.server_ip.as_str());
@@ -179,15 +180,14 @@ async fn read_file(master_client: &MasterClient, source_path: &str, destination_
 async fn update_file(master_client: &MasterClient, source_path: &str, destination_path: &str)
                      -> Result<(), Error> {
     let file: Vec<u8> = fs::read(source_path)?;
-    let size = file.len();
 
-    // Signal master with file size
-    let result: Vec<ChunkInfo> = master_client.update_file(destination_path, size).await?;
+    // get all chunks from master
+    let result: Vec<ChunkInfo> = master_client.read_all_file(destination_path).await?;
 
     // update across all chunks
     for chunk in result.iter() {
         let chunk_client = ChunkClient::new(&chunk.server_ip.as_str());
-        let _result = chunk_client.append_chunk(&chunk.uuid, file.clone()).await.unwrap();
+        let _result = chunk_client.update_chunk(&chunk.uuid, file.clone()).await.unwrap();
         // println!("{}", result);
     }
 

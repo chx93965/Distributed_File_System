@@ -418,9 +418,19 @@ pub fn file_write(path: String, size: usize) -> Result<Vec<(Uuid,String)>, Strin
     Ok(chunks)
 }
 
-pub fn file_read(path: String, chunk_index: usize) -> Result<Vec<(Uuid, String)>, String> {
+pub fn file_read(path: String) -> Result<Vec<(Uuid, String)>, String> {
     let chunks = file_lookup(path)?;
-    let tuples = get_chunks(chunks[chunk_index].clone());
+    // currently reading from the first chunk
+    let tuples = get_chunks(chunks[0].clone());
+    Ok(tuples)
+}
+
+pub fn file_read_all(path: String) -> Result<Vec<(Uuid, String)>, String> {
+    let chunks = file_lookup(path)?;
+    let mut tuples = Vec::new();
+    for chunk in chunks {
+        tuples.append(&mut get_chunks(chunk));
+    }
     Ok(tuples)
 }
 

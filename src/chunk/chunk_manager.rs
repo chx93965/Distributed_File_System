@@ -73,6 +73,25 @@ impl Chunks {
             }
         }
     }
+
+    pub fn update_chunk(&mut self, data: Vec<u8>, id: Uuid) {
+        let dir = Path::new(&self.chunks_dir);
+        let chunk_path = dir.join(id.to_string());
+        let chunk = self.find_chunk_mut(id);
+
+        match chunk {
+            Some(chunk) => {
+                let size = data.len();
+                chunk.data = data;
+                chunk._size = size;
+
+                // Update the file with the new data
+                std::fs::write(&chunk_path, &chunk.data).unwrap();
+            }
+            None => {}
+        }
+
+    }
     
     pub fn find_chunk(&self, id: Uuid) -> Option<&Chunk> {
         self.chunks.iter().find(|chunk| chunk.id == id)
@@ -152,6 +171,10 @@ impl ChunkManager {
 
     pub fn append_chunk(&mut self, data: Vec<u8>, id: Uuid) {
         self.chunks.append_chunk(data, id);
+    }
+
+    pub fn update_chunk(&mut self, data: Vec<u8>, id: Uuid) {
+        self.chunks.update_chunk(data, id);
     }
 
     pub fn get_chunk_list(&self) -> Vec<Uuid> {

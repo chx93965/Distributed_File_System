@@ -28,7 +28,7 @@ use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use uuid::Uuid;
 
 static CHUNK_MAP: SafeMap<Uuid, String> = SafeMap::new();
-static SERVER_MAP: SafeMap<String, Vec<Uuid>> = SafeMap::new();
+pub static SERVER_MAP: SafeMap<String, Vec<Uuid>> = SafeMap::new();
 
 // pub struct ChunkInfo {
 //     version: u16,
@@ -137,12 +137,12 @@ pub fn write_chunks(_size: usize) -> Vec<(Uuid, String)> {
      */
     let mut thingy: Vec<(Uuid, String)> = Vec::new(); // Initialize as mutable
     let all_keys = SERVER_MAP.keys(); // Collect keys into a Vec first
-
+    println!("{:?}", all_keys);
     // Sample 3 random keys
     let sample = all_keys
         .choose_multiple(&mut rand::thread_rng(), 3)
         .collect::<Vec<_>>();
-
+    println!("{:?}", sample);
     // Generate 3 UUIDs
     let uuids: Vec<Uuid> = (0..3).map(|_| Uuid::new_v4()).collect();
 

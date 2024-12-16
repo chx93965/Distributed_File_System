@@ -17,6 +17,7 @@ pub struct Metadata {
     pub os_name: String,
     pub os_version: String,
     pub host_name: String,
+    pub ip: String,
     pub chunkserver_id: u16,
     pub last_heartbeat: u64,
     pub disk_info: Disk,
