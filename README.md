@@ -298,15 +298,26 @@ The DFS provides a REST API for clients to interact with the system. The API all
 --- 
 #### Endpoint: `/file/read`
 - **Method**: `GET`
-- **Description**: Reads a specific chunk of a file from the system. The function retrieves the chunk information based on the file path and chunk index.
+- **Description**: Reads a specific chunk of a file from the system. The function retrieves the chunk information based on the file path.
 
 - **Parameters**:
   - `path`: A string representing the path to the file.
-  - `chunk`: An integer representing the chunk index to be read from the file.
 
 - **Request Example**:
   ```bash
-  curl -X GET "http://<base_url>/file/read?path=/path/to/file&chunk=0"
+  curl -X GET "http://<base_url>/file/read?path=/path/to/file"
+
+---
+#### Endpoint: `/file/read/all`
+- **Method**: `GET`
+- **Description**: Reads all chunks of a file from the system. The function retrieves the chunk information based on the file path.
+
+- **Parameters**:
+  - `path`: A string representing the path to the file.
+
+- **Request Example**:
+  ```bash
+  curl -X GET "http://<base_url>/file/read/all?path=/path/to/file"
 
 ---
 #### Endpoint: `/file/update`
@@ -380,6 +391,21 @@ The DFS provides a REST API for clients to interact with the system. The API all
 - **Example Request:**
     -   ```bash
         curl -X POST "http://127.0.0.1:8100/add_chunk?id=<UUID>" \
+            -H "Content-Type: application/octet-stream" \
+            --data-binary @example.bin
+        ```
+- **Error Responses:**
+  - **400 Bad Request**: If the request is malformed or missing required parameters.
+  - **413 Payload Too Large**: If the chunk size exceeds the maximum allowed size.
+---
+#### Method: `update_chunk`
+- **Description**: Updates a chunk in the chunk manager. This endpoint expects a POST request with binary data as the body of the request and allows specifying a UUID to associate with the chunk.
+- **Parameters:**
+  - `chunk_id`: The UUID of the chunk to be updated.
+  - `data`: The binary data of the chunk.
+- **Example Request:**
+    -   ```bash
+        curl -X POST "http://127.0.0.1:8100/update_chunk?id=<UUID>" \
             -H "Content-Type: application/octet-stream" \
             --data-binary @example.bin
         ```
