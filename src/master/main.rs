@@ -125,7 +125,7 @@ async fn main() {
     log_manager::set_logging(&[
         //log::Level::Info,
         //log::Level::Debug,
-        log::Level::Warn,
+        // log::Level::Warn,
         log::Level::Error,
     ]);
 

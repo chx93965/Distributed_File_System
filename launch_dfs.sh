@@ -13,7 +13,6 @@ launch_tmux_session() {
 cleanup() {
     echo "Cleaning up all tmux sessions..."
     tmux kill-session -t master 2>/dev/null
-    tmux kill-session -t client 2>/dev/null
     for session in $(tmux list-sessions -F "#S" | grep "chunkserver_"); do
         tmux kill-session -t "$session"
     done
