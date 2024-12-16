@@ -32,6 +32,24 @@ A **Distributed File System (DFS)** is a system that allows multiple computers t
 
 DFS is commonly used in cloud storage, big data processing, and content delivery networks, where access to large volumes of data from multiple locations is essential.
 
+## Project Motivation and Features
+
+The project focuses on designing a **distributed file storage system** to deliver **reliable, efficient, and secure data services**, essential for modern data-driven applications. Inspired by the large-scale data management needs of internet corporations and the rapid growth of big data and AI technologies, the system addresses the limitations of traditional databases while aligning with contemporary trends.
+
+### Key Features:
+
+  - **Reliability:** The system ensures high availability through data replication across multiple nodes, enabling quick fault recovery and efficient load balancing, critical for mission-critical applications.
+  - **Flexibility:** Leveraging a master-slave architecture, the system supports horizontal scalability and diverse data formats (structured, semi-structured, and unstructured), making it adaptable to a wide range of applications.
+  - **Efficiency:** Optimized data I/O operations minimize latencies and balance network workloads, meeting the needs of resource-constrained applications.
+  - **Security:** Distributed architecture reduces risks of breaches while advanced encryption and access control mechanisms further safeguard data integrity and reliability.
+
+### Alignment with Modern Trends:
+
+  - **Big Data and Machine Learning:** The system supports large-scale data analysis and incorporates machine learning for fault tolerance, data recovery, and anomaly detection, enhancing system resilience and security.
+  - **Importance of Rust:** Unlike traditional implementations in Java or Golang (e.g., HDFS, GFS), Rust provides superior performance, memory safety, and thread safety. Its ownership model, async runtime support, and efficient concurrency management make it particularly suited for distributed systems.
+
+By addressing the challenges of data consistency and development complexity, the proposed system aims to fill a critical gap in Rust’s ecosystem and contribute to advancing distributed storage technologies.
+
 # Architecture
 ![Distributed File System](./imgs/dfs_arch.png "Google File System Architecture")
 
@@ -455,4 +473,12 @@ The DFS provides a REST API for clients to interact with the system. The API all
 
 
  ## References
- Ghemawat, S., Gobioff, H., & Leung, S.T. (2003). The Google file system. In Proceedings of the Nineteenth ACM Symposium on Operating Systems Principles (pp. 29–43). Association for Computing Machinery.
+
+
+1\. Ghemawat, S., Gobioff, H., & Leung, S. T. (2003). The Google File System. In ACM SIGOPS Operating Systems Review (Vol. 37, No. 5, pp. 29-43).
+
+2\. Dean, J., & Ghemawat, S. (2004). MapReduce: Simplified Data Processing on Large Clusters. In Proceedings of the 6th conference on Symposium on Operating Systems Design & Implementation - Volume 6 (pp. 137-150).
+
+3\. Rust official documentation: https://doc.rust-lang.org/
+
+4\. Rocket framework for Rust: https://rocket.rs/
