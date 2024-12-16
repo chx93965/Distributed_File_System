@@ -472,6 +472,124 @@ The DFS provides a REST API for clients to interact with the system. The API all
     - **404 Not Found**: If the chunk with the specified UUID does not exist.
 
 
+# Performance Testing Tools
+
+## DFS Benchmarking Tool
+
+The project includes a comprehensive benchmarking tool for measuring and visualizing the performance characteristics of the DFS. This tool helps in understanding the system's behavior under various concurrent load conditions and can be used to optimize system configuration.
+
+### Features
+
+- Concurrent performance testing with configurable thread counts
+- Multiple test repetitions for statistical significance
+- Automated test file generation and cleanup
+- Performance visualization through graphs
+- Detailed CSV outputs with raw data and statistical summaries
+- Support for both read and write operations testing
+
+### Prerequisites
+
+- Python 3.8+
+- Required Python packages:
+  ```bash
+  pip install pandas matplotlib
+  ```
+
+### Usage
+
+#### Basic Usage
+
+Run the benchmark with default settings:
+```bash
+python dfs_benchmark.py \
+  --username your_username \
+  --password your_password \
+  --client-path /path/to/dfs/client
+```
+
+#### Advanced Usage
+
+Configure the benchmark with additional parameters:
+```bash
+python dfs_benchmark.py \
+  --username your_username \
+  --password your_password \
+  --client-path /path/to/dfs/client \
+  --max-threads 16 \
+  --file-size 1 \
+  --duration 30 \
+  --repeats 3 \
+  --output custom_benchmark_name
+```
+
+#### Parameters
+
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `--username` | Username for DFS authentication | Required |
+| `--password` | Password for DFS authentication | Required |
+| `--client-path` | Path to DFS client binary | Required |
+| `--max-threads` | Maximum number of concurrent threads to test | 16 |
+| `--file-size` | Size of test files in MB | 1 |
+| `--duration` | Duration of each test in seconds | 30 |
+| `--repeats` | Number of times to repeat each test | 3 |
+| `--output` | Prefix for output files | dfs_benchmark |
+
+### Output Files
+
+The benchmark generates several output files:
+
+1. **Raw Data**: `{prefix}_raw_data.csv`
+   - Contains all individual test results
+   - Columns: threads, operation, repeat, throughput_mbps, latency_ms, success_rate, total_operations
+
+2. **Summary Statistics**: `{prefix}_summary.csv`
+   - Statistical summary of all tests
+   - Includes mean, standard deviation, min, and max values
+   - Grouped by thread count and operation type
+
+3. **Performance Graphs**: 
+   - `{prefix}_throughput_mbps.png`: Throughput over thread counts
+   - `{prefix}_latency_ms.png`: Latency over thread counts
+   - `{prefix}_success_rate.png`: Success rate over thread counts
+   - `{prefix}_total_operations.png`: Total operations over thread counts
+
+### Understanding Results
+
+#### Throughput
+- Measured in MB/s
+- Higher values indicate better performance
+- Look for the point where throughput plateaus to identify optimal thread count
+
+#### Latency
+- Measured in milliseconds (ms)
+- Lower values indicate better performance
+- Watch for sharp increases which might indicate system saturation
+
+#### Success Rate
+- Measured as percentage (%)
+- Higher values indicate better reliability
+- Sharp drops might indicate system overload
+
+#### Total Operations
+- Raw count of operations completed
+- Higher values indicate better performance
+- Should scale with thread count until system saturation
+
+### Troubleshooting
+
+1. **"File already exists" error**
+   - The tool automatically creates unique file names for each operation
+   - Check for leftover test files from previous runs
+
+2. **Missing columns in output**
+   - Verify that the DFS client is outputting metrics in the expected format
+   - Check the debug output for parsing errors
+
+3. **Connection errors**
+   - Ensure the DFS cluster is running and accessible
+   - Verify the client path and credentials are correct
+
  ## References
 
 
