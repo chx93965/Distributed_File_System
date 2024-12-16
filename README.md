@@ -473,8 +473,6 @@ The DFS provides a REST API for clients to interact with the system. The API all
     - **404 Not Found**: If the chunk with the specified UUID does not exist.
 
 
-# Performance Testing Tools
-
 ## DFS Benchmarking Tool
 
 The project includes a comprehensive benchmarking tool for measuring and visualizing the performance characteristics of the DFS. This tool helps in understanding the system's behavior under various concurrent load conditions and can be used to optimize system configuration.
