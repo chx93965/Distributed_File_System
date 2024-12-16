@@ -589,6 +589,16 @@ The benchmark generates several output files:
    - Ensure the DFS cluster is running and accessible
    - Verify the client path and credentials are correct
 
+## Results
+We could see the results of our filesystem for 1, 2 and 4 concurrent threads in read/write mode.
+<br>
+As seen in the graphs our filesystem is scalable both for read and write operations.
+### Throughput
+![throughput](./imgs/throughput.jpg)
+### Total Operations
+![total ops](./imgs/total_ops.jpg)
+### Latency
+![latency](./imgs/latency.jpg)
  ## References
 
 
