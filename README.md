@@ -1,5 +1,5 @@
 # Distributed File System in Rust
-## Project Members
+# Project Members
 | Name                     | Student Number | Email Address                 |
 |--------------------------|----------------|-------------------------------|
 | Swapnil Patel            | 99728870       | Swap.patel@mail.utoronto.ca   |
@@ -11,7 +11,7 @@
 - Hanxiao Chang: 
 - Mohammad Hooman Keshvari: Master Node
 
-## Table of Contents
+# Table of Contents
 - [Proposals](./PROPOSAL.md)
 - [Introduction](#introduction)
 - [Architecture](#architecture)
@@ -19,7 +19,7 @@
 - [Rest API](#rest-api)
 - [References](#references)
 
-## Introduction
+# Introduction
 A **Distributed File System (DFS)** is a system that allows multiple computers to share a common file system, making data accessible and manageable across a network of interconnected machines. It provides a way to store, access, and manage files across various servers or nodes in a distributed manner. The main features of a DFS include:
 
 1\. **Centralized Management**: Despite data being distributed, the DFS offers a unified view of files, allowing users and applications to interact with them as if they were on a local machine.
@@ -32,7 +32,7 @@ A **Distributed File System (DFS)** is a system that allows multiple computers t
 
 DFS is commonly used in cloud storage, big data processing, and content delivery networks, where access to large volumes of data from multiple locations is essential.
 
-## Architecture
+# Architecture
 ![Distributed File System](./imgs/dfs_arch.png "Google File System Architecture")
 
 Our DFS is inspired by the Google File System (GFS) architecture, which is a distributed file system designed to store and manage large volumes of data across multiple servers. The GFS architecture consists of three main components:
@@ -72,6 +72,14 @@ The code structure for above binaries is shown below:
         ├── master_client_utils.rs
         └── mod.rs
 ```
+Building the project will generate three binaries:
+1. **master**: The master server that manages the metadata of the file system.
+2. **chunk_server**: The chunk server that stores and serves data chunks.
+3. **client**: The client application that interacts with the master server and chunk servers to perform file operations.
+
+Currently the Client allows user to interact with the DFS using a command-line interface. However, client can be wrapped in a GUI to provide a more user-friendly experience as future work.
+
+## Core Features
 
 The core features of the DFS include:
 
@@ -81,26 +89,153 @@ The core features of the DFS include:
 
 3\. **Fault Tolerance**: The DFS is designed to handle server failures gracefully by replicating data across multiple servers and maintaining multiple copies of each chunk. *(in progress)*
 
+4\. **Scalability**: The DFS can scale horizontally by adding more chunk servers to store additional data and improve performance.
+
 ---
-## How-to use
-### Build the project using "release" configuration
+# User Guide
+## Build the project using "release" configuration
 ```bash 
 cargo build --release 
 ```
-### Launch the cluster from the root directory
+## Launch the cluster from the root directory
+DFS can be launched on a local machine for testing and development purposes. The `launch_dfs.sh` script can be used to start the master and chunk servers on the local machine. The script takes the number of chunk servers as an argument and starts the master server and the specified number of chunk servers.
+
 ```bash
 launch_dfs.sh <number_of_nodes>
 ```
-### Client Operations
-Once the cluster is up and running, you can interact with the DFS using the client application. The client application provides a command-line interface to perform various operations on the DFS. You can run the client application using the following command:
-#### Create a file
-```bash
-./target/release/client --target file --action create --local_path <local_path> --remote_path <remote_path>
+## Client Operations
+Once the cluster is up and running, you can interact with the DFS using the client application. 
+
+The client uses a command-line interface. Below is the general syntax:
+
 ```
-#### Read a file
-```bash
-./target/release/client --target file --action read --local_path <local_path> --remote_path <remote_path>
+./client --username <USERNAME> --password <PASSWORD> --target <TARGET> --action <ACTION> [--local-path <LOCAL_PATH>] [--remote-path <REMOTE_PATH>]
 ```
+
+### **Command-line Parameters**
+
+| Parameter       | Description                                                                                   |
+|-----------------|-----------------------------------------------------------------------------------------------|
+| `--username`    | Username for authentication.                                                                  |
+| `--password`    | Password for authentication.                                                                  |
+| `--target`      | Target type for the operation: `file` or `directory` (short forms: `f`, `d`).                 |
+| `--action`      | Action to perform: `create`, `read`, `update`, or `delete` (short forms: `c`, `r`, `u`, `d`). |
+| `--local-path`  | Path to a local file or directory (used for `create` or `update` operations).                 |
+| `--remote-path` | Path to a remote file or directory on the Master Server.                                      |
+
+
+### 1. **User Authentication**
+
+Every command requires valid user credentials (`--username` and `--password`). The client will authenticate the user with the Master Server before executing any operation.
+
+### 2. **File Operations**
+
+#### a. **Create File**
+
+-   **Description**: Uploads a local file to the Master Server and distributes its chunks to Chunk Servers.
+    
+-   **Command**:
+    
+    ```
+    ./client --username <USERNAME> --password <PASSWORD> --target file --action create --local-path <LOCAL_PATH> --remote-path <REMOTE_PATH>
+    ```
+    
+-   **Example**:
+    
+    ```
+    ./client --username alice --password secure123 --target file --action create --local-path ./example.txt --remote-path /remote/example.txt
+    ```
+    
+
+#### b. **Read File**
+
+-   **Description**: Downloads a file from the Chunk Servers and saves it locally.
+    
+-   **Command**:
+    
+    ```
+    ./client --username <USERNAME> --password <PASSWORD> --target file --action read --local-path <LOCAL_PATH> --remote-path <REMOTE_PATH>
+    ```
+    
+-   **Example**:
+    
+    ```
+    ./client --username alice --password secure123 --target file --action read --local-path ./downloaded.txt --remote-path /remote/example.txt
+    ```
+    
+
+#### c. **Update File**
+
+-   **Description**: Replaces the contents of a remote file with a local file.
+    
+-   **Command**:
+    
+    ```
+    ./client --username <USERNAME> --password <PASSWORD> --target file --action update --local-path <LOCAL_PATH> --remote-path <REMOTE_PATH>
+    ```
+    
+-   **Example**:
+    
+    ```
+    ./client --username alice --password secure123 --target file --action update --local-path ./updated.txt --remote-path /remote/example.txt
+    ```
+    
+
+#### d. **Delete File**  _(Planned)_
+
+-   **Description**: Deletes a remote file.
+    
+-   **Command**:
+    
+    ```
+    ./client --username <USERNAME> --password <PASSWORD> --target file --action delete --remote-path <REMOTE_PATH>
+    ```
+
+### 3. **Directory Operations**
+
+#### a. **Create Directory**
+
+-   **Description**: Creates a new directory on the Master Server.
+    
+-   **Command**:
+    
+    ```
+    ./client --username <USERNAME> --password <PASSWORD> --target directory --action create --remote-path <REMOTE_PATH>
+    ```
+    
+-   **Example**:
+    
+    ```
+    ./client --username alice --password secure123 --target directory --action create --remote-path /remote/new_directory
+    ```
+    
+
+#### b. **Read Directory**
+
+-   **Description**: Lists the contents of a remote directory.
+    
+-   **Command**:
+    
+    ```
+    ./client --username <USERNAME> --password <PASSWORD> --target directory --action read --remote-path <REMOTE_PATH>
+    ```
+    
+-   **Example**:
+    
+    ```
+    ./client --username alice --password secure123 --target directory --action read --remote-path /remote/new_directory
+    ```
+    
+
+#### c. **Delete Directory**  _(Planned)_
+
+-   **Description**: Deletes a remote directory.
+    
+-   **Command**:
+    
+    ```
+    ./client --username <USERNAME> --password <PASSWORD> --target directory --action delete --remote-path <REMOTE_PATH>
+    ```
 
 ## Rest API
 The DFS provides a REST API for clients to interact with the system. The API allows clients to perform various operations such as uploading, downloading, deleting, and listing files. The API is implemented using the Rocket framework, which is a lightweight, high-performance web framework for Rust.
