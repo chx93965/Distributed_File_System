@@ -19,10 +19,11 @@
 - [Rest API](#rest-api)
 - [Benchmark](#dfs-benchmarking-tool)
 - [Video Demo](./demo.mp4)
+- [Conclusion](#concluding-remarks)
 - [References](#references)
 
 # Introduction
-Our **Distributed File System (DFS)** is a system that allows multiple computers to share a common file system, making data accessible and manageable across a network of interconnected machines. It provides a way to store, access, and manage files across various servers or nodes in a distributed manner. The main features of a DFS include:
+Our **Distributed File System (DFS)** is a system that allows multiple computers to share a common file system, making data accessible and manageable across a network of interconnected machines. It provides a way to store, access, and manage files across various servers or nodes in a distributed manner. The main objectives of a DFS include:
 
 1\. **Centralized Management**: Despite data being distributed, the DFS offers a unified view of files, allowing users and applications to interact with them as if they were on a local machine.
 
@@ -600,7 +601,19 @@ As seen in the graphs our filesystem is scalable both for read and write operati
 ![total ops](./imgs/total_ops.jpg)
 ### Latency
 ![latency](./imgs/latency.jpg)
- ## References
+
+
+# Concluding Remarks
+The project's progress has exceeded all our expectations. It successfully demonstrated the feasibility and huge potential of building a distributed file system using emerging programming languages like Rust. 
+The system’s architecture, as inspired by the Google File System, combines centralized metadata management along with distributed file storage, and eventually delivers a scalable and robust solution. 
+Looking ahead, several aspects require improvement: 
+
+-	System fault-tolerance: Further persistent storage is needed across all three components to ensure safe recovery from system failures. 
+-	Data transmission: Regardless of the convenience of Rest APIs, JSON serialization appears less efficient than other alternatives such as gRPC, which however does not currently support Rust language. 
+-	Centralization: The DFS currently heavily relies on the client to relay communication between the master and chunk servers. The master would have better control of the system by instructing the chunk servers directly. 
+
+
+# References
 
 
 1\. Ghemawat, S., Gobioff, H., & Leung, S. T. (2003). The Google File System. In ACM SIGOPS Operating Systems Review (Vol. 37, No. 5, pp. 29-43).
