@@ -1,27 +1,28 @@
 # Distributed File System in Rust
 # Project Members
-| Name                     | Student Number | Email Address                 |
-|--------------------------|----------------|-------------------------------|
-| Swapnil Patel            | 99728870       | Swap.patel@mail.utoronto.ca   |
-| Hanxiao Chang            | [Insert Here]  | [Insert Here]                 |
-| Mohammad Hooman Keshvari | 1011293869  | Hooman.keshvari@mail.utoronto.ca                 |
+| Name                     | Student Number | Email Address                    |
+|--------------------------|----------------|----------------------------------|
+| Swapnil Patel            | 99728870       | Swap.patel@mail.utoronto.ca      |
+| Hanxiao Chang            | 1006341709     | Hanxiao.chang@mail.utoronto.ca   |
+| Mohammad Hooman Keshvari | 1011293869     | Hooman.keshvari@mail.utoronto.ca |
 
 ### Contribution 
 - Swapnil Patel: Chunk server, cluster management, documentation
-- Hanxiao Chang: 
+- Hanxiao Chang: Client utils, Heartbeat, Interfaces, Demo
 - Mohammad Hooman Keshvari: Master Node Logic and Implementation, Benchmarking
 
 # Table of Contents
 - [Proposals](./PROPOSAL.md)
 - [Introduction](#introduction)
 - [Architecture](#architecture)
-- [How-to use](#how-to-use)
+- [User Guide](#user-guide)
 - [Rest API](#rest-api)
 - [Benchmark](#dfs-benchmarking-tool)
+- [Video Demo](./demo.mp4)
 - [References](#references)
 
 # Introduction
-A **Distributed File System (DFS)** is a system that allows multiple computers to share a common file system, making data accessible and manageable across a network of interconnected machines. It provides a way to store, access, and manage files across various servers or nodes in a distributed manner. The main features of a DFS include:
+Our **Distributed File System (DFS)** is a system that allows multiple computers to share a common file system, making data accessible and manageable across a network of interconnected machines. It provides a way to store, access, and manage files across various servers or nodes in a distributed manner. The main features of a DFS include:
 
 1\. **Centralized Management**: Despite data being distributed, the DFS offers a unified view of files, allowing users and applications to interact with them as if they were on a local machine.
 
@@ -60,9 +61,9 @@ Our DFS is inspired by the Google File System (GFS) architecture, which is a dis
 
 2\. **Chunk Servers**: The chunk servers store the actual data in the form of fixed-size chunks. Each chunk is replicated across multiple chunk servers to ensure data availability and reliability. The chunk servers are responsible for storing, replicating, and serving data to clients. *(in progress)*
 
-3\. **Client**: The client interacts with the master server to perform file operations such as reading, writing, and deleting files. The client communicates with the chunk servers to read and write data chunks.
+3\. **Client**: The client parses user input to correspondingly perform file and directory operations including reading, writing, updating, and deleting files. The client communicates with the master server for chunk information, and then interacts with the chunk servers with binary data. 
 
-The code structure for above binaries is shown below:
+The code structure for the above binaries is shown below:
 ```bash
 ├── launch_dfs.sh
 ├── Metadata_Example
@@ -96,7 +97,7 @@ Building the project will generate three binaries:
 2. **chunk_server**: The chunk server that stores and serves data chunks.
 3. **client**: The client application that interacts with the master server and chunk servers to perform file operations.
 
-Currently the Client allows user to interact with the DFS using a command-line interface. However, client can be wrapped in a GUI to provide a more user-friendly experience as future work.
+Currently the Client allows user to interact with the DFS using a command-line interface. However, the client can be wrapped in a GUI to provide a more user-friendly experience for future work.
 
 ## Core Features
 
@@ -112,7 +113,7 @@ The core features of the DFS include:
 
 ---
 # User Guide
-## Build the project using "release" configuration
+## Build the project using the "release" configuration
 ```bash 
 cargo build --release 
 ```
